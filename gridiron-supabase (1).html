@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Gridiron — Team Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0b;--bg2:#111113;--bg3:#18181b;--bg4:#1f1f24;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --text:#f0f0f0;--text2:#a0a0aa;--text3:#5a5a6a;
+  --accent:#d4f000;--accent2:#b8d400;--def:#ff3d1a;--blue:#00ccff;
+  --purple:#b56aff;--orange:#ff9500;--green:#00ff88;
+  --r:8px;--r2:12px;--nav:60px;--sidebar:260px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:15px;line-height:1.5;overflow:hidden;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input,textarea,select{font-family:inherit;font-size:inherit;color:inherit;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:8px 12px;outline:none;width:100%;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(212,240,0,.12);}
+textarea{resize:vertical;min-height:80px;}select{appearance:none;}a{color:var(--accent);text-decoration:none;}
+h1{font-family:'Bebas Neue',sans-serif;letter-spacing:2px;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+#app{display:flex;flex-direction:column;height:100vh;}
+#topnav{height:var(--nav);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:100;}
+#maincontent{flex:1;display:flex;overflow:hidden;}
+#sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;padding-bottom:16px;}
+#view{flex:1;overflow-y:auto;overflow-x:hidden;}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--accent);flex-shrink:0;}
+.nav-team{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;}
+.nav-team-badge{width:28px;height:28px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:#000;flex-shrink:0;}
+.nav-team-name{font-weight:600;font-size:13px;}.nav-team-role{font-size:11px;color:var(--text2);letter-spacing:.5px;}.nav-spacer{flex:1;}
+.nav-avatar{width:34px;height:34px;border-radius:50%;background:var(--bg4);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;cursor:pointer;}
+.nav-notif{position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;transition:.15s;}
+.nav-notif:hover{background:var(--bg3);}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--def);border-radius:50%;border:2px solid var(--bg2);display:none;}
+.sb-section{padding:16px 12px 6px;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:var(--r);margin:1px 8px;cursor:pointer;transition:.12s;font-size:14px;font-weight:500;color:var(--text2);}
+.sb-item:hover{background:var(--bg3);color:var(--text);}
+.sb-item.active{background:rgba(212,240,0,.1);color:var(--accent);}
+.sb-icon{width:18px;height:18px;flex-shrink:0;opacity:.7;}
+.sb-item.active .sb-icon{opacity:1;color:var(--accent);}
+.sb-badge{margin-left:auto;background:var(--def);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
+.sb-badge.green{background:var(--green);color:#000;}
+.sb-divider{height:1px;background:var(--border);margin:8px 12px;}
+.staff-tag{font-size:9px;background:rgba(181,106,255,.2);color:var(--purple);padding:1px 5px;border-radius:4px;margin-left:auto;letter-spacing:.5px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+.card-accent{border-color:rgba(212,240,0,.25);background:rgba(212,240,0,.04);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-weight:600;font-size:13px;letter-spacing:.3px;transition:.15s;cursor:pointer;border:1px solid transparent;}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent);}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:transparent;color:var(--text2);border-color:var(--border2);}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);}
+.btn-danger{background:rgba(255,61,26,.15);color:var(--def);border-color:rgba(255,61,26,.3);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;}
+.badge-coach{background:rgba(0,204,255,.15);color:var(--blue);}
+.badge-player{background:rgba(212,240,0,.12);color:var(--accent);}
+.badge-ad{background:rgba(181,106,255,.15);color:var(--purple);}
+.badge-installed{background:rgba(0,255,136,.12);color:var(--green);}
+.badge-draft{background:rgba(255,149,0,.12);color:var(--orange);}
+.page-header{padding:28px 28px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;line-height:1;}
+.page-sub{font-size:13px;color:var(--text2);margin-top:4px;}
+.page-body{padding:20px 28px 40px;}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
+.stat-card{background:var(--bg3);border-radius:var(--r);padding:16px;text-align:center;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;letter-spacing:1px;}
+.stat-lbl{font-size:11px;color:var(--text2);letter-spacing:.5px;margin-top:2px;text-transform:uppercase;}
+.progress{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;transition:.4s;}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-title{font-weight:700;font-size:14px;letter-spacing:.5px;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;}
+.form-row{display:flex;gap:10px;}.form-row>*{flex:1;}
+.divider-label{display:flex;align-items:center;gap:10px;color:var(--text3);font-size:11px;letter-spacing:1px;margin:16px 0;}
+.divider-label::before,.divider-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.empty{text-align:center;padding:48px 24px;}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.3;}
+.empty-title{font-weight:700;font-size:16px;margin-bottom:6px;}
+.empty-body{font-size:13px;color:var(--text2);}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.tab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);transition:.13s;margin-bottom:-1px;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.phase-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;}
+.phase-off{background:rgba(212,240,0,.1);color:var(--accent);}
+.phase-def{background:rgba(255,61,26,.1);color:var(--def);}
+.phase-st{background:rgba(0,204,255,.1);color:var(--blue);}
+.play-tag{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:600;background:var(--bg4);color:var(--text2);}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
+.av-coach{background:rgba(0,204,255,.15);color:var(--blue);}
+.av-player{background:rgba(212,240,0,.12);color:var(--accent);}
+.av-ad{background:rgba(181,106,255,.15);color:var(--purple);}
+.roster-num{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);width:36px;text-align:center;flex-shrink:0;}
+.toast-container{position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+.toast{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 18px;font-size:13px;font-weight:600;opacity:0;transform:translateY(-8px);transition:.25s;}
+.toast.show{opacity:1;transform:none;}
+.toast.success{border-color:rgba(0,255,136,.3);color:var(--green);}
+.toast.info{border-color:rgba(0,204,255,.3);color:var(--blue);}
+.toast.warn{border-color:rgba(255,149,0,.3);color:var(--orange);}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.hidden{display:none;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;margin-bottom:18px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap;}
+.notif-panel{position:fixed;top:64px;right:12px;width:320px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);z-index:500;box-shadow:0 8px 32px rgba(0,0,0,.5);overflow:hidden;}
+.notif-panel.hidden{display:none;}
+.notif-head{padding:12px 16px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center;}
+.notif-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;cursor:pointer;transition:.12s;}
+.notif-item:hover{background:var(--bg3);}
+.notif-item.unread{border-left:3px solid var(--accent);}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px;}
+.login-box{width:100%;max-width:380px;}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:4px;color:var(--accent);text-align:center;margin-bottom:4px;}
+.login-sub{text-align:center;font-size:13px;color:var(--text2);letter-spacing:1px;margin-bottom:32px;}
+.login-form{display:flex;flex-direction:column;gap:12px;}
+.login-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text2);text-transform:uppercase;margin-bottom:4px;display:block;}
+.demo-btn{padding:9px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:10px;transition:.13s;text-align:left;width:100%;}
+.demo-btn:hover{border-color:var(--border2);}
+.demo-btn-role{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;}
+.demo-btn-name{font-weight:600;font-size:13px;}
+/* messages */
+.msg-layout{display:flex;height:100%;overflow:hidden;}
+.msg-sidebar{width:260px;border-right:1px solid var(--border);flex-shrink:0;overflow-y:auto;}
+.msg-main{flex:1;display:flex;flex-direction:column;}
+.msg-thread{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:.12s;}
+.msg-thread:hover{background:var(--bg3);}
+.msg-thread.active{background:rgba(212,240,0,.06);border-left:3px solid var(--accent);}
+.msg-thread-name{font-weight:700;font-size:13px;}
+.msg-thread-prev{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.msg-header{padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.msg-area{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
+.msg-input-row{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;}
+.bubble{max-width:72%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;}
+.bubble-mine{background:var(--accent);color:#000;align-self:flex-end;border-bottom-right-radius:4px;}
+.bubble-theirs{background:var(--bg3);align-self:flex-start;border-bottom-left-radius:4px;}
+/* play detail */
+.play-detail-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:20px 28px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+.play-detail-thumb{width:200px;height:130px;background:var(--bg4);border-radius:var(--r);flex-shrink:0;background:linear-gradient(180deg,#1e4a0a,#1a3d09);}
+.note-card{background:var(--bg3);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;border-left:3px solid var(--border2);}
+.note-card.coach-note{border-left-color:var(--purple);background:rgba(181,106,255,.06);}
+.note-card.player-note{border-left-color:var(--green);background:rgba(0,255,136,.04);}
+/* CALENDAR */
+.cal-header-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);padding:4px 0;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-day{min-height:68px;background:var(--bg3);border-radius:var(--r);padding:5px 6px;border:1px solid var(--border);cursor:pointer;transition:.12s;}
+.cal-day:hover{border-color:var(--border2);}
+.cal-day.today{border-color:rgba(212,240,0,.5);background:rgba(212,240,0,.04);}
+.cal-day.other-month{opacity:.25;}
+.cal-day-num{font-size:11px;font-weight:700;margin-bottom:3px;color:var(--text2);}
+.cal-day.today .cal-day-num{color:var(--accent);}
+.cal-event-dot{font-size:10px;padding:1px 4px;border-radius:3px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
+.cal-event-dot.game{background:rgba(255,61,26,.25);color:#ff8a75;}
+.cal-event-dot.practice{background:rgba(212,240,0,.15);color:#c8e000;}
+.cal-event-dot.meeting{background:rgba(0,204,255,.15);color:var(--blue);}
+.cal-event-dot.other{background:rgba(181,106,255,.15);color:var(--purple);}
+.countdown-band{background:rgba(255,61,26,.07);border:1px solid rgba(255,61,26,.2);border-radius:var(--r2);padding:16px 20px;display:flex;align-items:center;gap:20px;margin-bottom:20px;}
+.countdown-num{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:var(--def);}
+.ev-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+/* FILM */
+.film-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.film-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:.15s;}
+.film-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.film-thumb{height:120px;background:var(--bg4);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.film-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.film-play-btn{position:absolute;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.75);border:2px solid rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;}
+.film-info{padding:10px 12px;}
+.film-title{font-weight:700;font-size:13px;margin-bottom:3px;}
+.film-meta{font-size:11px;color:var(--text2);}
+.film-player{width:100%;aspect-ratio:16/9;background:#000;border-radius:var(--r);overflow:hidden;margin-bottom:14px;}
+.film-player iframe{width:100%;height:100%;border:none;}
+/* PRACTICE PLANNER */
+.pp-period{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:8px;overflow:hidden;transition:.12s;}
+.pp-period.drag-over{border-color:var(--accent);}
+.pp-head{padding:11px 14px;display:flex;align-items:center;gap:10px;background:var(--bg3);border-bottom:1px solid var(--border);cursor:grab;}
+.pp-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pp-notes{padding:8px 14px;font-size:12px;color:var(--text2);}
+/* AVAILABILITY */
+.avail-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.avail-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.avail-dot.full{background:var(--green);}
+.avail-dot.limited{background:var(--orange);}
+.avail-dot.out{background:var(--def);}
+.avail-dot.pending{background:var(--text3);}
+.avail-btns{display:flex;gap:4px;margin-left:auto;}
+.avail-btn{padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;border:1px solid var(--border2);cursor:pointer;transition:.12s;background:var(--bg3);color:var(--text2);}
+.avail-btn.sel-full{background:rgba(0,255,136,.15);border-color:rgba(0,255,136,.4);color:var(--green);}
+.avail-btn.sel-limited{background:rgba(255,149,0,.15);border-color:rgba(255,149,0,.4);color:var(--orange);}
+.avail-btn.sel-out{background:rgba(255,61,26,.15);border-color:rgba(255,61,26,.4);color:var(--def);}
+/* SCOUTING */
+.tend-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);}
+.tend-bar-wrap{height:3px;background:var(--bg4);border-radius:2px;margin-top:4px;overflow:hidden;}
+.tend-bar-fill{height:100%;background:var(--accent);border-radius:2px;}
+/* QUIZ */
+.quiz-opt{padding:10px 14px;border:1px solid var(--border2);border-radius:var(--r);margin-bottom:8px;cursor:pointer;transition:.13s;font-size:13px;}
+.quiz-opt:hover{border-color:var(--accent);background:rgba(212,240,0,.05);}
+.quiz-opt.sel{border-color:var(--accent);background:rgba(212,240,0,.08);}
+.quiz-opt.correct{border-color:var(--green);background:rgba(0,255,136,.08);color:var(--green);}
+.quiz-opt.wrong{border-color:var(--def);background:rgba(255,61,26,.08);color:var(--def);}
+/* READ RECEIPTS */
+.receipt-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.rcpt-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.rcpt-dot.read{background:rgba(0,255,136,.15);color:var(--green);}
+.rcpt-dot.unread{background:var(--bg4);color:var(--text3);}
+/* STATS TABLE */
+.stat-table{width:100%;border-collapse:collapse;}
+.stat-table th{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);}
+.stat-table th:first-child,.stat-table td:first-child{text-align:left;}
+.stat-table td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px;text-align:right;}
+.stat-table td:first-child{font-weight:700;}
+.stat-table tr:hover td{background:rgba(255,255,255,.02);}
+/* INJURY */
+.inj-row{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);}
+.inj-sev{width:4px;border-radius:2px;flex-shrink:0;align-self:stretch;}
+.inj-sev.minor{background:var(--orange);}
+.inj-sev.moderate{background:var(--def);}
+.inj-sev.major{background:#ff0000;}
+.inj-eta{font-size:11px;background:var(--bg3);padding:2px 8px;border-radius:4px;color:var(--text2);margin-top:5px;display:inline-block;}
+/* DEPTH CHART */
+.dc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.dc-col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;}
+.dc-col-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);}
+.dc-col-pos{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:var(--accent);}
+.dc-slot{padding:9px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;cursor:grab;transition:.12s;}
+.dc-slot:last-child{border-bottom:none;}
+.dc-slot:hover{background:var(--bg3);}
+.dc-slot.drag-over{background:rgba(212,240,0,.08);}
+.dc-slot.dragging{opacity:.4;}
+.dc-d1{color:var(--accent);}
+.dc-d2{color:var(--text2);}
+.dc-d3{color:var(--text3);}
+.dc-empty{padding:9px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;color:var(--text3);font-size:12px;cursor:pointer;}
+.dc-empty:hover{background:rgba(255,255,255,.02);}
+.dc-note{padding:8px 12px;background:rgba(181,106,255,.04);border-top:1px solid rgba(181,106,255,.12);font-size:11px;color:var(--purple);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.fade-in{animation:fadeIn .25s ease both;}
+@media(max-width:768px){
+  #sidebar{display:none;}
+  .mob-nav{display:flex;}
+  .page-header{padding:16px 16px 0;}
+  .page-body{padding:14px 16px 90px;}
+}
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:200;}
+.mob-nav-items{display:flex;}
+.mob-nav-item{flex:1;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:600;}
+.mob-nav-item.active{color:var(--accent);}
+.mob-nav-item svg{width:20px;height:20px;}
+/* ONBOARDING */
+.onboard-step{display:none;}.onboard-step.active{display:block;}
+.onboard-progress{display:flex;gap:6px;margin-bottom:24px;}
+.onboard-dot{flex:1;height:3px;border-radius:2px;background:var(--border2);}
+.onboard-dot.done{background:var(--accent);}
+.role-card{padding:14px;background:var(--bg3);border:2px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:.15s;text-align:center;}
+.role-card:hover{border-color:var(--border2);}
+.role-card.sel{border-color:var(--accent);background:rgba(212,240,0,.06);}
+.role-card-icon{font-size:28px;margin-bottom:6px;}
+.role-card-title{font-weight:700;font-size:14px;}
+.role-card-desc{font-size:11px;color:var(--text2);margin-top:3px;}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="notif-panel hidden" id="notifPanel">
+  <div class="notif-head">Notifications <button class="btn btn-sm btn-ghost" onclick="closeNotif()">✕</button></div>
+  <div id="notifList"></div>
+</div>
+<div class="modal-bg hidden" id="modalBg">
+  <div class="modal" id="modalBox"><div id="modalContent"></div></div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="login-screen">
+  <div class="login-box fade-in">
+    <div class="login-logo">GRIDIRON</div>
+    <div class="login-sub">TEAM PLATFORM</div>
+
+    <!-- Tab bar -->
+    <div style="display:flex;background:var(--bg3);border-radius:var(--r);padding:3px;margin-bottom:24px;">
+      <button id="tabSignIn" onclick="switchTab('signin')" style="flex:1;padding:8px;border-radius:6px;font-weight:700;font-size:13px;background:var(--accent);color:#000;border:none;cursor:pointer;transition:.15s;">Sign In</button>
+      <button id="tabSignUp" onclick="switchTab('signup')" style="flex:1;padding:8px;border-radius:6px;font-weight:700;font-size:13px;background:transparent;color:var(--text2);border:none;cursor:pointer;transition:.15s;">Create Account</button>
+    </div>
+
+    <!-- SIGN IN -->
+    <div id="panelSignIn">
+      <div class="login-form">
+        <div><label class="login-label">Email</label><input type="email" id="siEmail" placeholder="you@team.com"></div>
+        <div><label class="login-label">Password</label><input type="password" id="siPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignIn()"></div>
+        <div id="siError" style="font-size:12px;color:var(--def);display:none;"></div>
+        <button id="siBtn" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;" onclick="doSignIn()">Sign In</button>
+      </div>
+      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2);">
+        No account? <a href="#" onclick="switchTab('signup');return false;" style="color:var(--accent);">Create one →</a>
+      </div>
+    </div>
+
+    <!-- SIGN UP (3-step onboarding) -->
+    <div id="panelSignUp" style="display:none;">
+      <div class="onboard-progress">
+        <div class="onboard-dot done" id="od1"></div>
+        <div class="onboard-dot" id="od2"></div>
+        <div class="onboard-dot" id="od3"></div>
+      </div>
+
+      <!-- Step 1: Account -->
+      <div class="onboard-step active" id="step1">
+        <div style="font-weight:700;font-size:16px;margin-bottom:4px;">Create your account</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:18px;">Step 1 of 3 — Login credentials</div>
+        <div class="form-group"><label class="form-label">Full Name</label><input id="suName" placeholder="Mike Carter"></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="suEmail" placeholder="you@team.com"></div>
+        <div class="form-group"><label class="form-label">Password</label><input type="password" id="suPass" placeholder="8+ characters"></div>
+        <div id="suError1" style="font-size:12px;color:var(--def);display:none;margin-bottom:10px;"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="onboardNext(1)">Continue →</button>
+      </div>
+
+      <!-- Step 2: Role -->
+      <div class="onboard-step" id="step2">
+        <div style="font-weight:700;font-size:16px;margin-bottom:4px;">What's your role?</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:18px;">Step 2 of 3 — Choose your role on the team</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
+          <div class="role-card sel" id="rc-coach" onclick="selectRole('coach')">
+            <div class="role-card-icon">🏈</div>
+            <div class="role-card-title">Coach</div>
+            <div class="role-card-desc">Full access</div>
+          </div>
+          <div class="role-card" id="rc-player" onclick="selectRole('player')">
+            <div class="role-card-icon">⚡</div>
+            <div class="role-card-title">Player</div>
+            <div class="role-card-desc">Playbook + comms</div>
+          </div>
+          <div class="role-card" id="rc-ad" onclick="selectRole('ad')">
+            <div class="role-card-icon">📋</div>
+            <div class="role-card-title">AD</div>
+            <div class="role-card-desc">Admin view</div>
+          </div>
+        </div>
+        <div id="roleExtras" style="margin-bottom:18px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;" onclick="onboardBack(2)">← Back</button>
+          <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="onboardNext(2)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Team -->
+      <div class="onboard-step" id="step3">
+        <div style="font-weight:700;font-size:16px;margin-bottom:4px;">Your team</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:18px;">Step 3 of 3 — Create or join a team</div>
+        <div style="display:flex;gap:8px;margin-bottom:18px;">
+          <button id="tmCreate" onclick="switchTeamMode('create')" class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">Create Team</button>
+          <button id="tmJoin" onclick="switchTeamMode('join')" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">Join Team</button>
+        </div>
+        <div id="teamCreate">
+          <div class="form-group"><label class="form-label">Team Name</label><input id="suTeamName" placeholder="Riverside Rams"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Abbreviation</label><input id="suTeamAbbr" placeholder="RR" maxlength="4" oninput="this.value=this.value.toUpperCase()"></div>
+            <div class="form-group"><label class="form-label">Season</label><input id="suTeamSeason" placeholder="2025"></div>
+          </div>
+        </div>
+        <div id="teamJoin" style="display:none;">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Ask your coach for the Team ID and paste it below.</div>
+          <div class="form-group"><label class="form-label">Team ID</label><input id="suTeamId" placeholder="Paste team ID..."></div>
+        </div>
+        <div id="suError3" style="font-size:12px;color:var(--def);display:none;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;" onclick="onboardBack(3)">← Back</button>
+          <button id="suFinalBtn" class="btn btn-primary" style="flex:1;justify-content:center;" onclick="doSignUp()">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--accent);">GRIDIRON</div>
+  <div style="font-size:13px;color:var(--text2);" id="loadingMsg">Loading...</div>
+</div>
+
+<!-- APP -->
+<body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="notif-panel hidden" id="notifPanel">
+  <div class="notif-head">Notifications <button class="btn btn-sm btn-ghost" onclick="closeNotif()">✕</button></div>
+  <div id="notifList"></div>
+</div>
+<div class="modal-bg hidden" id="modalBg">
+  <div class="modal" id="modalBox"><div id="modalContent"></div></div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box fade-in">
+    <div class="login-logo">GRIDIRON</div>
+    <div class="login-sub">TEAM PLATFORM</div>
+    <div class="login-form">
+      <div><label class="login-label">Email</label><input type="email" placeholder="coach@team.com" id="loginEmail"></div>
+      <div><label class="login-label">Password</label><input type="password" placeholder="••••••••" id="loginPass"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;" onclick="loginUser()">Sign In</button>
+    </div>
+    <div class="divider-label">or sign in as demo user</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="demo-btn" onclick="loginAs('coach')"><div class="avatar av-coach" style="width:32px;height:32px;font-size:11px;">MC</div><div><div class="demo-btn-role" style="color:var(--blue)">Head Coach</div><div class="demo-btn-name">Mike Carter</div></div></button>
+      <button class="demo-btn" onclick="loginAs('player')"><div class="avatar av-player" style="width:32px;height:32px;font-size:11px;">JW</div><div><div class="demo-btn-role" style="color:var(--accent)">Player</div><div class="demo-btn-name">Jordan Williams</div></div></button>
+      <button class="demo-btn" onclick="loginAs('ad')"><div class="avatar av-ad" style="width:32px;height:32px;font-size:11px;">SR</div><div><div class="demo-btn-role" style="color:var(--purple)">Athletic Director</div><div class="demo-btn-name">Sarah Reynolds</div></div></button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;">
+  <div id="topnav">
+    <div class="nav-logo">GRIDIRON</div>
+    <div class="nav-team">
+      <div class="nav-team-badge" id="navBadge">RR</div>
+      <div><div class="nav-team-name" id="navTeamName">Riverside Rams</div><div class="nav-team-role" id="navRole">HEAD COACH</div></div>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-notif" onclick="toggleNotif()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="notif-dot" id="notifDot"></div>
+    </div>
+    <div class="avatar nav-avatar" id="navAvatar" onclick="showView('settings')">MC</div>
+  </div>
+  <div id="maincontent">
+    <div id="sidebar">
+      <div class="sb-section">Main</div>
+      <div class="sb-item active" onclick="showView('dashboard')" id="sb-dashboard"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
+      <div class="sb-item" onclick="showView('playbook')" id="sb-playbook"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Playbook</div>
+      <div class="sb-item" onclick="showView('designer')" id="sb-designer"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Play Designer</div>
+      <div class="sb-section">Team</div>
+      <div class="sb-item" onclick="showView('roster')" id="sb-roster"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Roster</div>
+      <div class="sb-item" onclick="showView('messages')" id="sb-messages"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages<span class="sb-badge" id="sb-msg-badge" style="display:none"></span></div>
+      <div class="sb-item" onclick="showView('availability')" id="sb-availability"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Availability</div>
+      <div class="sb-item" onclick="showView('schedule')" id="sb-schedule"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule</div>
+      <div class="sb-item" onclick="showView('filmroom')" id="sb-filmroom"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Film Room</div>
+      <div class="sb-item" onclick="showView('installs')" id="sb-installs"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Installs</div>
+      <div class="sb-item" onclick="showView('quiz')" id="sb-quiz"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Quizzes</div>
+      <div class="sb-item" onclick="showView('stats')" id="sb-stats"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Stats</div>
+      <div class="sb-item" onclick="showView('parent')" id="sb-parent"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Parent Portal</div>
+      <div class="sb-section">Staff Only</div>
+      <div class="sb-item" onclick="showView('depthchart')" id="sb-depthchart"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Depth Chart<span class="staff-tag">STAFF</span></div>
+      <div class="sb-item" onclick="showView('practice')" id="sb-practice"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Practice Plan<span class="staff-tag">STAFF</span></div>
+      <div class="sb-item" onclick="showView('scouting')" id="sb-scouting"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Scouting<span class="staff-tag">STAFF</span></div>
+      <div class="sb-item" onclick="showView('injuries')" id="sb-injuries"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3"/><path d="M16 5h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="9" y1="11" x2="15" y2="11"/></svg>Injury Log<span class="staff-tag">STAFF</span></div>
+      <div class="sb-divider"></div>
+      <div class="sb-item" onclick="showView('settings')" id="sb-settings"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</div>
+      <div class="sb-item" onclick="logout()" style="margin-top:4px;"><svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</div>
+    </div>
+    <div id="view"></div>
+  </div>
+  <nav class="mob-nav">
+    <div class="mob-nav-items">
+      <div class="mob-nav-item active" onclick="showView('dashboard')" id="mob-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Home</div>
+      <div class="mob-nav-item" onclick="showView('playbook')" id="mob-playbook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Playbook</div>
+      <div class="mob-nav-item" onclick="showView('messages')" id="mob-messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Messages</div>
+      <div class="mob-nav-item" onclick="showView('schedule')" id="mob-schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule</div>
+      <div class="mob-nav-item" onclick="showView('roster')" id="mob-roster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Team</div>
+    </div>
+  </nav>
+</div>
+<script>
+// ── SUPABASE INIT ──
+const SUPA_URL = 'https://pvrsxirhhtxmvdsdecoa.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2cnN4aXJoaHR4bXZkc2RlY29hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDAxODYsImV4cCI6MjA4OTAxNjE4Nn0.P6axiZtVpYtQRyC9oaXTblWYIrls8P-cJELSpx4tzDM';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── APP STATE ──
+let currentUser = null;   // auth.user
+let currentProfile = null; // profiles row
+let currentTeam = null;   // teams row
+let currentView = 'dashboard';
+
+// Local cache (refreshed on each view load)
+let PLAYS = [], ROSTER = [], MESSAGES = [], SCHEDULE_EVENTS = [];
+let FILM_CLIPS = [], QUIZZES = [], GAME_STATS = [], INJURIES = [];
+let PRACTICE_PLANS = {}, SCOUTING_REPORTS = [], AVAILABILITY = {};
+let READ_RECEIPTS = {}, DEPTH_CHART = { off:{}, def:{}, st:{} };
+let DC_NOTES = {};
+
+// UI state
+let activeMsgId = null, activeFilmId = null, activeScoutId = null;
+let activeQuizId = null, quizAnswers = {}, quizSubmitted = false;
+let statsTab = 'passing', dcPhase = 'off', dcDragSlot = null;
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+let activePlanDate = null, ppDragIdx = null;
+let onboardRole = 'coach', onboardTeamMode = 'create';
+let realtimeSub = null;
+
+// ── UTIL ──
+function greeting(){const h=new Date().getHours();return h<12?'Morning':h<17?'Afternoon':'Evening';}
+function isCoach(){return currentProfile&&(currentProfile.role==='coach'||currentProfile.role==='ad');}
+function evColor(type){return type==='game'?'var(--def)':type==='practice'?'var(--accent)':type==='meeting'?'var(--blue)':'var(--purple)';}
+function showToast(msg,type=''){
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div');
+  t.className='toast '+(type||'');t.textContent=msg;c.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},2500);
+}
+function showModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalBg').classList.remove('hidden');}
+function closeModal(){document.getElementById('modalBg').classList.add('hidden');}
+function closeNotif(){document.getElementById('notifPanel').classList.add('hidden');}
+function toggleNotif(){
+  const p=document.getElementById('notifPanel');
+  if(p.classList.contains('hidden')){p.classList.remove('hidden');}
+  else p.classList.add('hidden');
+}
+function showLoading(msg='Loading...'){
+  const o=document.getElementById('loadingOverlay');
+  document.getElementById('loadingMsg').textContent=msg;
+  o.style.display='flex';
+}
+function hideLoading(){document.getElementById('loadingOverlay').style.display='none';}
+function fmtDate(ts){if(!ts)return'';const d=new Date(ts);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
+
+// ── AUTH SCREEN UI ──
+function switchTab(tab){
+  const signin=tab==='signin';
+  document.getElementById('panelSignIn').style.display=signin?'block':'none';
+  document.getElementById('panelSignUp').style.display=signin?'none':'block';
+  document.getElementById('tabSignIn').style.cssText=signin?'flex:1;padding:8px;border-radius:6px;font-weight:700;font-size:13px;background:var(--accent);color:#000;border:none;cursor:pointer;':'flex:1;padding:8px;border-radius:6px;font-weight:700;font-size:13px;background:transparent;color:var(--text2);border:none;cursor:pointer;';
+  document.getElementById('tabSignUp').style.cssText=signin?'flex:1;padding:8px;border-radius:6px;font-weight:700;font-size:13px;background:transparent;color:var(--text2);border:none;cursor:pointer;':'flex:1;padding:8px;border-radius:6px;font-weight:700;font-size:13px;background:var(--accent);color:#000;border:none;cursor:pointer;';
+}
+function selectRole(role){
+  onboardRole=role;
+  ['coach','player','ad'].forEach(r=>{
+    const el=document.getElementById('rc-'+r);
+    if(el) el.classList.toggle('sel',r===role);
+  });
+  const extras=document.getElementById('roleExtras');
+  if(role==='player'){
+    extras.innerHTML='<div class="form-group"><label class="form-label">Jersey Number</label><input id="suNumber" placeholder="7"></div>'+
+      '<div class="form-row"><div class="form-group"><label class="form-label">Position</label><input id="suPos" placeholder="QB"></div>'+
+      '<div class="form-group"><label class="form-label">Year</label><select id="suYear"><option>Fr</option><option>So</option><option>Jr</option><option selected>Sr</option></select></div></div>';
+  } else if(role==='coach'){
+    extras.innerHTML='<div class="form-group"><label class="form-label">Title</label><input id="suTitle" placeholder="Head Coach, OC, DC..."></div>';
+  } else {
+    extras.innerHTML='';
+  }
+}
+function switchTeamMode(mode){
+  onboardTeamMode=mode;
+  document.getElementById('teamCreate').style.display=mode==='create'?'block':'none';
+  document.getElementById('teamJoin').style.display=mode==='join'?'block':'none';
+  document.getElementById('tmCreate').className='btn btn-sm '+(mode==='create'?'btn-primary':'btn-ghost')+' btn-sm';
+  document.getElementById('tmCreate').style.flex='1';document.getElementById('tmCreate').style.justifyContent='center';
+  document.getElementById('tmJoin').className='btn btn-sm '+(mode==='join'?'btn-primary':'btn-ghost')+' btn-sm';
+  document.getElementById('tmJoin').style.flex='1';document.getElementById('tmJoin').style.justifyContent='center';
+}
+function onboardNext(step){
+  if(step===1){
+    const name=document.getElementById('suName').value.trim();
+    const email=document.getElementById('suEmail').value.trim();
+    const pass=document.getElementById('suPass').value;
+    const err=document.getElementById('suError1');
+    if(!name||!email||!pass){err.textContent='All fields required.';err.style.display='block';return;}
+    if(pass.length<8){err.textContent='Password must be 8+ characters.';err.style.display='block';return;}
+    err.style.display='none';
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('od2').classList.add('done');
+    selectRole('coach');
+  } else if(step===2){
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step3').classList.add('active');
+    document.getElementById('od3').classList.add('done');
+  }
+}
+function onboardBack(step){
+  if(step===2){
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step1').classList.add('active');
+    document.getElementById('od2').classList.remove('done');
+  } else if(step===3){
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('od3').classList.remove('done');
+  }
+}
+
+// ── SIGN IN ──
+async function doSignIn(){
+  const email=document.getElementById('siEmail').value.trim();
+  const pass=document.getElementById('siPass').value;
+  const errEl=document.getElementById('siError');
+  const btn=document.getElementById('siBtn');
+  if(!email||!pass){errEl.textContent='Email and password required.';errEl.style.display='block';return;}
+  btn.textContent='Signing in...';btn.disabled=true;
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){errEl.textContent=error.message;errEl.style.display='block';btn.textContent='Sign In';btn.disabled=false;return;}
+  // Session triggers onAuthStateChange
+}
+
+// ── SIGN UP ──
+async function doSignUp(){
+  const name=document.getElementById('suName').value.trim();
+  const email=document.getElementById('suEmail').value.trim();
+  const pass=document.getElementById('suPass').value;
+  const errEl=document.getElementById('suError3');
+  const btn=document.getElementById('suFinalBtn');
+  btn.textContent='Creating...';btn.disabled=true;
+  try {
+    // 1. Create auth user
+    const meta={name,role:onboardRole,initials:(name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2))};
+    if(onboardRole==='player'){
+      meta.number=document.getElementById('suNumber')?.value||'';
+      meta.pos=document.getElementById('suPos')?.value||'';
+      meta.year=document.getElementById('suYear')?.value||'Sr';
+      meta.title=meta.pos||'Player';
+    } else if(onboardRole==='coach'){
+      meta.title=document.getElementById('suTitle')?.value||'Coach';
+    } else {
+      meta.title='Athletic Director';
+    }
+    const {data:authData,error:authErr}=await sb.auth.signUp({email,password:pass,options:{data:meta}});
+    if(authErr) throw authErr;
+    const uid=authData.user.id;
+    // 2. Create or join team
+    let teamId;
+    if(onboardTeamMode==='create'){
+      const tname=document.getElementById('suTeamName').value.trim()||'My Team';
+      const tabbr=(document.getElementById('suTeamAbbr').value.trim()||tname.slice(0,2)).toUpperCase();
+      const tseason=document.getElementById('suTeamSeason').value.trim()||String(new Date().getFullYear());
+      const {data:teamData,error:teamErr}=await sb.from('teams').insert({name:tname,abbr:tabbr,season:tseason}).select().single();
+      if(teamErr) throw teamErr;
+      teamId=teamData.id;
+    } else {
+      teamId=document.getElementById('suTeamId').value.trim();
+      const {data:check,error:checkErr}=await sb.from('teams').select('id').eq('id',teamId).single();
+      if(checkErr||!check) throw new Error('Team not found. Check the ID and try again.');
+    }
+    // 3. Update profile with team_id + role extras
+    const profileUpdate={team_id:teamId,role:onboardRole,title:meta.title,initials:meta.initials};
+    if(onboardRole==='player'){profileUpdate.number=meta.number;profileUpdate.pos=meta.pos;profileUpdate.year=meta.year;}
+    await sb.from('profiles').update(profileUpdate).eq('id',uid);
+    showToast('Account created! Check your email to confirm.','success');
+    switchTab('signin');
+    document.getElementById('siEmail').value=email;
+  } catch(e){
+    errEl.textContent=e.message;errEl.style.display='block';
+  }
+  btn.textContent='Create Account';btn.disabled=false;
+}
+
+// ── SESSION HANDLER ──
+sb.auth.onAuthStateChange(async (event, session) => {
+  if(event==='SIGNED_IN'||event==='INITIAL_SESSION'){
+    if(session?.user){
+      showLoading('Loading your team...');
+      await bootApp(session.user);
+    }
+  } else if(event==='SIGNED_OUT'){
+    currentUser=null;currentProfile=null;currentTeam=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('authScreen').style.display='flex';
+    hideLoading();
+    if(realtimeSub){sb.removeChannel(realtimeSub);realtimeSub=null;}
+  }
+});
+
+// ── BOOT APP ──
+async function bootApp(user){
+  currentUser=user;
+  // Load profile
+  const {data:profile}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  if(!profile){hideLoading();showToast('Profile not found. Please sign up again.','warn');await sb.auth.signOut();return;}
+  currentProfile=profile;
+  // Load team
+  if(profile.team_id){
+    const {data:team}=await sb.from('teams').select('*').eq('id',profile.team_id).single();
+    currentTeam=team;
+  }
+  // Load all data in parallel
+  await loadAllData();
+  // Boot UI
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('navAvatar').textContent=currentProfile.initials||'?';
+  document.getElementById('navTeamName').textContent=currentTeam?.name||'My Team';
+  document.getElementById('navRole').textContent=(currentProfile.title||currentProfile.role).toUpperCase();
+  document.getElementById('navBadge').textContent=currentTeam?.abbr||'??';
+  // Staff-only nav
+  const staffItems=['depthchart','practice','scouting','injuries'];
+  staffItems.forEach(id=>{
+    const el=document.getElementById('sb-'+id);
+    if(el) el.style.display=isCoach()?'flex':'none';
+  });
+  // Subscribe to real-time
+  subscribeRealtime();
+  hideLoading();
+  showView('dashboard');
+}
+
+// ── LOAD ALL DATA ──
+async function loadAllData(){
+  if(!currentTeam) return;
+  const tid=currentTeam.id;
+  const uid=currentUser.id;
+  const [
+    {data:plays},{data:profiles},{data:schedule},{data:avail},
+    {data:film},{data:quizzes},{data:stats},{data:injuries},
+    {data:plans},{data:scouting},{data:dc}
+  ] = await Promise.all([
+    sb.from('plays').select('*').eq('team_id',tid).order('created_at'),
+    sb.from('profiles').select('*').eq('team_id',tid),
+    sb.from('schedule_events').select('*').eq('team_id',tid).order('date'),
+    sb.from('availability').select('*').eq('team_id',tid),
+    sb.from('film_clips').select('*').eq('team_id',tid).order('created_at',{ascending:false}),
+    sb.from('quizzes').select('*, quiz_results(*)').eq('team_id',tid).order('created_at'),
+    sb.from('game_stats').select('*').eq('team_id',tid).order('game_date',{ascending:false}),
+    sb.from('injuries').select('*').eq('team_id',tid).eq('cleared',false).order('created_at',{ascending:false}),
+    sb.from('practice_plans').select('*').eq('team_id',tid).order('plan_date'),
+    sb.from('scouting_reports').select('*').eq('team_id',tid).order('created_at',{ascending:false}),
+    sb.from('depth_chart').select('*').eq('team_id',tid)
+  ]);
+  PLAYS=plays||[];
+  ROSTER=profiles||[];
+  SCHEDULE_EVENTS=schedule||[];
+  FILM_CLIPS=film||[];
+  GAME_STATS=stats||[];
+  INJURIES=injuries||[];
+  SCOUTING_REPORTS=scouting||[];
+  // Availability map
+  AVAILABILITY={};
+  (avail||[]).forEach(a=>{AVAILABILITY[a.player_id]=a.status;});
+  // Practice plans map
+  PRACTICE_PLANS={};
+  (plans||[]).forEach(p=>{PRACTICE_PLANS[p.plan_date]={...p,periods:p.periods||[]};});
+  if(plans&&plans.length) activePlanDate=plans[0].plan_date;
+  // Quizzes: normalise player results
+  QUIZZES=(quizzes||[]).map(q=>{
+    const results={};
+    (q.quiz_results||[]).forEach(r=>{results[r.player_id]={score:r.score,answers:r.answers,done:true,id:r.id};});
+    return{...q,playerResults:results};
+  });
+  if(QUIZZES.length) activeQuizId=QUIZZES[0].id;
+  // Scouting
+  if(SCOUTING_REPORTS.length) activeScoutId=SCOUTING_REPORTS[0].id;
+  // Depth chart: convert rows into nested object
+  DEPTH_CHART={off:{},def:{},st:{}};
+  const positions={};
+  (dc||[]).forEach(row=>{
+    const k=row.phase+'__'+row.position;
+    if(!positions[k]) positions[k]={phase:row.phase,position:row.position,slots:row.slots||3,players:[]};
+    positions[k].players[row.depth]=row.player_id;
+  });
+  Object.values(positions).forEach(p=>{
+    if(!DEPTH_CHART[p.phase]) DEPTH_CHART[p.phase]={};
+    const arr=[];
+    for(let i=0;i<p.slots;i++) arr.push(p.players[i]||null);
+    DEPTH_CHART[p.phase][p.position]=arr;
+  });
+  // Read receipts — load for all installed plays
+  const installedIds=PLAYS.filter(p=>p.status==='installed').map(p=>p.id);
+  READ_RECEIPTS={};
+  if(installedIds.length){
+    const {data:rr}=await sb.from('read_receipts').select('*').in('play_id',installedIds);
+    (rr||[]).forEach(r=>{
+      if(!READ_RECEIPTS[r.play_id]) READ_RECEIPTS[r.play_id]={};
+      READ_RECEIPTS[r.play_id][r.player_id]=true;
+    });
+  }
+  // Messages
+  const {data:threads}=await sb.from('messages').select('*, message_posts(*, profiles(name,initials,role))').eq('team_id',tid).order('created_at');
+  MESSAGES=(threads||[]).filter(t=>!t.coach_only||isCoach()).map(t=>({
+    ...t,
+    msgs:(t.message_posts||[]).map(p=>({id:p.id,from:p.sender_id,text:p.text,time:fmtDate(p.created_at),senderName:p.profiles?.name||'?',initials:p.profiles?.initials||'?'})),
+    unread:0
+  }));
+  if(MESSAGES.length) activeMsgId=MESSAGES[0].id;
+}
+
+// ── REAL-TIME ──
+function subscribeRealtime(){
+  if(!currentTeam) return;
+  const tid=currentTeam.id;
+  realtimeSub=sb.channel('gridiron-'+tid)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'message_posts'},async(payload)=>{
+      // Refresh messages and re-render if on messages view
+      const {data:post}=await sb.from('message_posts').select('*, profiles(name,initials,role)').eq('id',payload.new.id).single();
+      if(!post) return;
+      const thread=MESSAGES.find(m=>m.id===post.thread_id);
+      if(thread){
+        thread.msgs.push({id:post.id,from:post.sender_id,text:post.text,time:fmtDate(post.created_at),senderName:post.profiles?.name||'?',initials:post.profiles?.initials||'?'});
+        if(currentView==='messages') renderMessages(activeMsgId);
+        else showToast('New message from '+post.profiles?.name,'info');
+      }
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'plays'},payload=>{
+      const idx=PLAYS.findIndex(p=>p.id===payload.new.id);
+      if(idx>=0) PLAYS[idx]=payload.new; else PLAYS.push(payload.new);
+      if(currentView==='installs') renderInstalls();
+      else if(currentView==='playbook') renderPlaybook();
+      if(payload.new.status==='installed'&&!isCoach()) showToast(payload.new.name+' was installed to the playbook!','success');
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'availability'},payload=>{
+      AVAILABILITY[payload.new.player_id]=payload.new.status;
+      if(currentView==='availability') renderAvailability();
+    })
+    .subscribe();
+}
+
+// ── LOGOUT ──
+async function logout(){
+  await sb.auth.signOut();
+}
+
+// ── NAVIGATION ──
+function showView(name){
+  currentView=name;
+  document.querySelectorAll('.sb-item').forEach(el=>el.classList.remove('active'));
+  const sbEl=document.getElementById('sb-'+name);
+  if(sbEl) sbEl.classList.add('active');
+  document.querySelectorAll('.mob-nav-item').forEach(el=>el.classList.remove('active'));
+  const mobEl=document.getElementById('mob-'+name);
+  if(mobEl) mobEl.classList.add('active');
+  document.getElementById('view').scrollTop=0;
+  const fns={
+    dashboard:renderDashboard,playbook:renderPlaybook,designer:renderDesigner,
+    roster:renderRoster,messages:renderMessages,availability:renderAvailability,
+    schedule:renderSchedule,filmroom:renderFilmRoom,installs:renderInstalls,
+    quiz:renderQuiz,stats:renderStats,parent:renderParent,
+    depthchart:renderDepthChart,practice:renderPractice,scouting:renderScouting,
+    injuries:renderInjuries,settings:renderSettings
+  };
+  if(fns[name]) fns[name]();
+  else document.getElementById('view').innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div class="empty-title">Coming Soon</div></div>';
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const installed=PLAYS.filter(p=>p.status==='installed').length;
+  const total=PLAYS.length;
+  const players=ROSTER.filter(r=>r.role==='player');
+  const nextGame=SCHEDULE_EVENTS.filter(e=>e.type==='game').sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const daysUntil=nextGame?Math.max(0,Math.ceil((new Date(nextGame.date)-new Date())/(864e5))):null;
+  const quizDue=QUIZZES.filter(q=>!q.playerResults[currentUser.id]?.done).length;
+  const v=document.getElementById('view');
+  v.innerHTML=
+  '<div class="fade-in">'+
+  '<div class="page-header"><div><div class="page-title">Good '+greeting()+', '+currentProfile.name.split(' ')[0]+'</div>'+
+  '<div class="page-sub">'+(currentTeam?.name||'Your Team')+' &middot; '+(currentTeam?.season||'')+' Season &middot; '+(currentTeam?.record||'')+'</div></div>'+
+  (isCoach()?'<button class="btn btn-primary" onclick="showView(\'designer\')">+ New Play</button>':'')+
+  '</div><div class="page-body">'+
+  (daysUntil!==null?
+    '<div class="countdown-band"><div>'+
+    '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--def);margin-bottom:4px;">NEXT GAME</div>'+
+    '<div style="font-weight:700;font-size:16px;">'+nextGame.title+'</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin-top:2px;">'+nextGame.date+' &middot; '+nextGame.time+'</div>'+
+    '<button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="showView(\'schedule\')">Full Schedule &rarr;</button>'+
+    '</div><div style="margin-left:auto;text-align:center;">'+
+    '<div class="countdown-num">'+daysUntil+'</div>'+
+    '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;">DAYS AWAY</div>'+
+    '</div></div>'
+  :'')+
+  '<div class="grid-4" style="margin-bottom:24px;margin-top:16px;">'+
+  '<div class="stat-card"><div class="stat-val" style="color:var(--accent)">'+installed+'</div><div class="stat-lbl">Installed</div></div>'+
+  '<div class="stat-card"><div class="stat-val">'+players.length+'</div><div class="stat-lbl">Players</div></div>'+
+  '<div class="stat-card"><div class="stat-val" style="color:var(--text2)">'+MESSAGES.length+'</div><div class="stat-lbl">Threads</div></div>'+
+  '<div class="stat-card"><div class="stat-val" style="color:'+(quizDue?'var(--orange)':'var(--green)')+'">'+quizDue+'</div><div class="stat-lbl">Quizzes Due</div></div>'+
+  '</div>'+
+  '<div class="grid-2" style="gap:20px;">'+
+  '<div><div class="sec-header"><div class="sec-title">Installed Plays</div><button class="btn btn-ghost btn-sm" onclick="showView(\'playbook\')">View All</button></div>'+
+  '<div style="display:flex;flex-direction:column;gap:7px;">'+
+  (PLAYS.filter(p=>p.status==='installed').slice(0,4).map(p=>
+    '<div onclick="openPlay(\''+p.id+'\')" class="card-sm" style="cursor:pointer;display:flex;align-items:center;gap:10px;">'+
+    '<div style="width:44px;height:29px;border-radius:4px;background:linear-gradient(180deg,#1e4a0a,#1a3d09);flex-shrink:0;"></div>'+
+    '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;">'+p.name+'</div>'+
+    '<div style="font-size:11px;color:var(--text2);">'+p.formation+'</div></div>'+
+    '<span class="phase-pill phase-'+p.phase+'">'+p.phase.toUpperCase()+'</span></div>'
+  ).join('')||'<div class="empty" style="padding:20px;"><div class="empty-icon">📋</div><div class="empty-body">No plays installed yet</div></div>')+
+  '</div></div>'+
+  '<div><div class="sec-header"><div class="sec-title">Upcoming</div><button class="btn btn-ghost btn-sm" onclick="showView(\'schedule\')">Calendar</button></div>'+
+  (SCHEDULE_EVENTS.slice(0,4).map(e=>
+    '<div class="card-sm" style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">'+
+    '<div style="width:9px;height:9px;border-radius:50%;background:'+evColor(e.type)+';flex-shrink:0;"></div>'+
+    '<div><div style="font-weight:700;font-size:13px;">'+e.title+'</div>'+
+    '<div style="font-size:11px;color:var(--text2);">'+e.date+' &middot; '+(e.time||'')+'</div></div></div>'
+  ).join('')||'<div class="empty" style="padding:20px;"><div class="empty-icon">📅</div><div class="empty-body">No events scheduled</div></div>')+
+  '</div></div>'+
+  (isCoach()&&total>0?
+    '<div style="margin-top:24px;"><div class="sec-header"><div class="sec-title">Playbook Progress</div>'+
+    '<button class="btn btn-ghost btn-sm" onclick="showView(\'installs\')">Manage</button></div>'+
+    '<div class="card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">'+
+    '<div style="flex:1;"><div style="font-size:13px;font-weight:600;margin-bottom:6px;">Installed '+installed+' of '+total+' plays</div>'+
+    '<div class="progress"><div class="progress-fill" style="width:'+Math.round(installed/total*100)+'%;background:var(--accent);"></div></div></div>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:28px;color:var(--accent);">'+Math.round(installed/total*100)+'%</div></div></div></div>'
+  :'')+
+  '</div></div>';
+}
+
+// ── PLAYBOOK ──
+function renderPlaybook(){
+  const visible=isCoach()?PLAYS:PLAYS.filter(p=>p.status==='installed');
+  const phases=['off','def','st'];
+  const phaseNames={off:'Offense',def:'Defense',st:'Special Teams'};
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Playbook</div>'+
+    '<div class="page-sub">'+visible.length+' plays</div></div>'+
+    (isCoach()?'<button class="btn btn-primary" onclick="newPlayModal()">+ New Play</button>':'')+
+    '</div><div class="page-body">';
+  if(!visible.length){
+    html+='<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No plays yet</div>'+
+      '<div class="empty-body">'+( isCoach()?'Create your first play to get started.':'No plays have been installed yet.'  )+'</div></div>';
+  }
+  phases.forEach(ph=>{
+    const plays=visible.filter(p=>p.phase===ph);
+    if(!plays.length) return;
+    html+='<div class="sec-header" style="margin-top:20px;"><div class="sec-title">'+phaseNames[ph]+'</div></div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;">';
+    plays.forEach(p=>{
+      const isDraft=p.status==='draft';
+      html+='<div class="card-sm" style="cursor:pointer;" onclick="openPlay(\''+p.id+'\')">';
+      html+='<div style="height:80px;background:linear-gradient(180deg,#1e4a0a,#1a3d09);border-radius:6px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;position:relative;">';
+      if(isDraft&&!isCoach()) html+='<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🔒</div>';
+      html+='</div>';
+      html+='<div style="font-weight:700;font-size:13px;margin-bottom:2px;">'+p.name+'</div>';
+      html+='<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">'+p.formation+'</div>';
+      html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+      html+='<span class="phase-pill phase-'+ph+'">'+ph.toUpperCase()+'</span>';
+      html+='<span class="badge '+(isDraft?'badge-draft':'badge-installed')+'">'+(isDraft?'DRAFT':'INSTALLED')+'</span>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  });
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function newPlayModal(){
+  showModal('<div class="modal-title">New Play</div>'+
+    '<div class="form-group"><label class="form-label">Play Name</label><input id="npName" placeholder="Power Left, Mesh Concept..."></div>'+
+    '<div class="form-group"><label class="form-label">Formation</label><input id="npForm" placeholder="I-Formation, Shotgun..."></div>'+
+    '<div class="form-row">'+
+    '<div class="form-group"><label class="form-label">Phase</label><select id="npPhase"><option value="off">Offense</option><option value="def">Defense</option><option value="st">Special Teams</option></select></div>'+
+    '<div class="form-group"><label class="form-label">Tags (comma-sep)</label><input id="npTags" placeholder="Run, Power..."></div>'+
+    '</div>'+
+    '<div class="form-group"><label class="form-label">Coach Notes</label><textarea id="npCoach"></textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveNewPlay()">Create Play</button></div>');
+}
+async function saveNewPlay(){
+  const name=document.getElementById('npName').value.trim();
+  if(!name){showToast('Name required','warn');return;}
+  const tags=document.getElementById('npTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const {data,error}=await sb.from('plays').insert({
+    team_id:currentTeam.id,name,
+    formation:document.getElementById('npForm').value.trim(),
+    phase:document.getElementById('npPhase').value,
+    tags,coach_notes:document.getElementById('npCoach').value.trim(),
+    created_by:currentUser.id
+  }).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  PLAYS.push(data);
+  closeModal();showToast(name+' created','success');renderPlaybook();
+}
+function openPlay(id){
+  const p=PLAYS.find(x=>x.id===id);
+  if(!p) return;
+  const coach=isCoach();
+  let html='<div class="fade-in">';
+  html+='<div class="play-detail-header"><div class="play-detail-thumb"></div>';
+  html+='<div style="flex:1;min-width:0;"><div class="page-title" style="font-size:24px;">'+p.name+'</div>';
+  html+='<div style="font-size:13px;color:var(--text2);margin-top:4px;">'+p.formation+' &middot; <span class="phase-pill phase-'+p.phase+'">'+p.phase.toUpperCase()+'</span></div>';
+  if(p.tags?.length) html+='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">'+p.tags.map(t=>'<span class="play-tag">'+t+'</span>').join('')+'</div>';
+  html+='<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">';
+  if(coach){
+    if(p.status==='draft') html+='<button class="btn btn-primary btn-sm" onclick="installPlay(\''+p.id+'\')">Install to Playbook</button>';
+    else html+='<button class="btn btn-ghost btn-sm" onclick="showReadReceipts(\''+p.id+'\')">👁 Read Receipts</button>';
+    html+='<button class="btn btn-ghost btn-sm" onclick="editPlayModal(\''+p.id+'\')">Edit</button>';
+    html+='<button class="btn btn-danger btn-sm" onclick="deletePlayConfirm(\''+p.id+'\')">Delete</button>';
+  }
+  html+='<button class="btn btn-ghost btn-sm" onclick="showView(\'playbook\')">← Back</button>';
+  html+='</div></div></div>';
+  html+='<div class="page-body">';
+  if(coach&&p.coach_notes) html+='<div class="note-card coach-note" style="margin-bottom:12px;"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--purple);margin-bottom:6px;">COACHES ONLY</div><div style="font-size:13px;color:var(--text2);">'+p.coach_notes+'</div></div>';
+  if(p.player_notes) html+='<div class="note-card player-note" style="margin-bottom:12px;"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--green);margin-bottom:6px;">PLAYER NOTES</div><div style="font-size:13px;color:var(--text2);">'+p.player_notes+'</div></div>';
+  // Mark as read
+  if(!isCoach()&&p.status==='installed'){
+    if(!READ_RECEIPTS[p.id]?.[currentUser.id]){
+      sb.from('read_receipts').upsert({play_id:p.id,player_id:currentUser.id}).then(()=>{
+        if(!READ_RECEIPTS[p.id]) READ_RECEIPTS[p.id]={};
+        READ_RECEIPTS[p.id][currentUser.id]=true;
+      });
+    }
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function editPlayModal(id){
+  const p=PLAYS.find(x=>x.id===id);if(!p)return;
+  showModal('<div class="modal-title">Edit Play</div>'+
+    '<div class="form-group"><label class="form-label">Name</label><input id="epName" value="'+p.name+'"></div>'+
+    '<div class="form-group"><label class="form-label">Formation</label><input id="epForm" value="'+(p.formation||'')+'"></div>'+
+    '<div class="form-group"><label class="form-label">Coach Notes</label><textarea id="epCoach">'+( p.coach_notes||'')+'</textarea></div>'+
+    '<div class="form-group"><label class="form-label">Player Notes</label><textarea id="epPlayer">'+(p.player_notes||'')+'</textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveEditPlay(\''+id+'\')">Save</button></div>');
+}
+async function saveEditPlay(id){
+  const updates={name:document.getElementById('epName').value.trim(),formation:document.getElementById('epForm').value.trim(),coach_notes:document.getElementById('epCoach').value.trim(),player_notes:document.getElementById('epPlayer').value.trim()};
+  const {error}=await sb.from('plays').update(updates).eq('id',id);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  const idx=PLAYS.findIndex(p=>p.id===id);
+  if(idx>=0) PLAYS[idx]={...PLAYS[idx],...updates};
+  closeModal();showToast('Play updated','success');openPlay(id);
+}
+async function deletePlayConfirm(id){
+  const p=PLAYS.find(x=>x.id===id);if(!p)return;
+  showModal('<div class="modal-title">Delete '+p.name+'?</div>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:18px;">This cannot be undone.</p>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-danger" onclick="doDeletePlay(\''+id+'\')">Delete</button></div>');
+}
+async function doDeletePlay(id){
+  await sb.from('plays').delete().eq('id',id);
+  PLAYS=PLAYS.filter(p=>p.id!==id);
+  closeModal();showToast('Play deleted','warn');renderPlaybook();
+}
+function installPlay(id){
+  const p=PLAYS.find(x=>x.id===id);if(!p)return;
+  showModal('<div class="modal-title">Install '+p.name+'</div>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:14px;">This will appear in all player playbooks immediately.</p>'+
+    '<div class="form-group"><label class="form-label">Player Note (optional)</label><textarea id="installNote"></textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="confirmInstall(\''+id+'\')">Install Now</button></div>');
+}
+async function confirmInstall(id){
+  const note=document.getElementById('installNote')?.value||'';
+  const today=new Date().toISOString().slice(0,10);
+  const updates={status:'installed',installed_date:today};
+  if(note) updates.player_notes=note;
+  const {error}=await sb.from('plays').update(updates).eq('id',id);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  const idx=PLAYS.findIndex(p=>p.id===id);
+  if(idx>=0) PLAYS[idx]={...PLAYS[idx],...updates};
+  closeModal();showToast('Play installed!','success');renderInstalls();
+}
+async function uninstallPlay(id){
+  const {error}=await sb.from('plays').update({status:'draft',installed_date:null}).eq('id',id);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  const idx=PLAYS.findIndex(p=>p.id===id);
+  if(idx>=0){PLAYS[idx].status='draft';PLAYS[idx].installed_date=null;}
+  showToast('Play uninstalled','warn');renderInstalls();
+}
+async function showReadReceipts(playId){
+  const p=PLAYS.find(x=>x.id===playId);if(!p)return;
+  const {data:rr}=await sb.from('read_receipts').select('player_id').eq('play_id',playId);
+  const readIds=new Set((rr||[]).map(r=>r.player_id));
+  const players=ROSTER.filter(r=>r.role==='player');
+  let html='<div class="modal-title">Read Receipts — '+p.name+'</div>'+
+    '<div class="grid-2" style="margin-bottom:16px;">'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--green)">'+readIds.size+'</div><div class="stat-lbl">Viewed</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--text3)">'+(players.length-readIds.size)+'</div><div class="stat-lbl">Not Viewed</div></div></div>';
+  players.forEach(r=>{
+    html+='<div class="receipt-row">'+
+      '<div class="rcpt-dot '+(readIds.has(r.id)?'read':'unread')+'">'+(readIds.has(r.id)?'✓':'—')+'</div>'+
+      '<div class="avatar av-player" style="width:28px;height:28px;font-size:10px;">'+r.initials+'</div>'+
+      '<div style="flex:1;font-weight:600;">'+r.name+'</div>'+
+      '<div style="font-size:11px;color:'+(readIds.has(r.id)?'var(--green)':'var(--text3)')+';">'+(readIds.has(r.id)?'Viewed':'Not yet')+'</div></div>';
+  });
+  html+='<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div>';
+  showModal(html);
+}
+
+// ── INSTALLS ──
+function renderInstalls(){
+  const installed=PLAYS.filter(p=>p.status==='installed');
+  const draft=PLAYS.filter(p=>p.status==='draft');
+  const players=ROSTER.filter(r=>r.role==='player');
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Installs</div></div></div><div class="page-body">';
+  html+='<div class="card card-accent" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:20px;">'+
+    '<div style="flex:1;"><div style="font-weight:700;font-size:14px;margin-bottom:6px;">Progress</div>'+
+    '<div class="progress" style="height:8px;margin-bottom:6px;"><div class="progress-fill" style="width:'+( PLAYS.length?Math.round(installed.length/PLAYS.length*100):0)+'%;background:var(--accent);"></div></div>'+
+    '<div style="font-size:12px;color:var(--text2);">'+installed.length+' of '+PLAYS.length+' plays installed</div></div>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:48px;color:var(--accent);line-height:1;">'+(PLAYS.length?Math.round(installed.length/PLAYS.length*100):0)+'<span style="font-size:24px;">%</span></div></div>';
+  if(draft.length){
+    html+='<div class="sec-header"><div class="sec-title">Ready to Install ('+draft.length+')</div></div>';
+    draft.forEach(p=>{
+      html+='<div class="card-sm" style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">'+
+        '<div style="width:52px;height:34px;background:linear-gradient(180deg,#1e4a0a,#1a3d09);border-radius:4px;flex-shrink:0;"></div>'+
+        '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;">'+p.name+'</div><div style="font-size:11px;color:var(--text2);">'+p.formation+'</div></div>'+
+        '<span class="phase-pill phase-'+p.phase+'">'+p.phase.toUpperCase()+'</span>'+
+        (isCoach()?'<button class="btn btn-primary btn-sm" onclick="installPlay(\''+p.id+'\')">Install</button>':'')+
+        '</div>';
+    });
+  }
+  html+='<div class="sec-header" style="margin-top:16px;"><div class="sec-title">Installed ('+installed.length+')</div></div>';
+  installed.forEach(p=>{
+    const rr=READ_RECEIPTS[p.id]||{};
+    const readCount=players.filter(r=>rr[r.id]).length;
+    const pct=players.length?Math.round(readCount/players.length*100):0;
+    html+='<div class="card-sm" style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">'+
+      '<div style="width:52px;height:34px;background:linear-gradient(180deg,#1e4a0a,#1a3d09);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--green);font-weight:700;">✓</div>'+
+      '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;">'+p.name+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+p.formation+(isCoach()?' &middot; <span style="color:'+(pct===100?'var(--green)':pct>50?'var(--accent)':'var(--orange)')+'">'+readCount+'/'+players.length+' viewed</span>':'')+'</div></div>'+
+      '<span class="phase-pill phase-'+p.phase+'">'+p.phase.toUpperCase()+'</span>'+
+      (isCoach()?'<button class="btn btn-ghost btn-sm" onclick="showReadReceipts(\''+p.id+'\')">👁 '+readCount+'/'+players.length+'</button>':'')+
+      (isCoach()?'<button class="btn btn-ghost btn-sm" onclick="uninstallPlay(\''+p.id+'\')">Uninstall</button>':'')+
+      '<button class="btn btn-ghost btn-sm" onclick="openPlay(\''+p.id+'\')">View</button></div>';
+  });
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+
+// ── ROSTER ──
+function renderRoster(){
+  const players=ROSTER.filter(r=>r.role==='player');
+  const staff=ROSTER.filter(r=>r.role!=='player');
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Roster</div>'+
+    '<div class="page-sub">'+players.length+' players &middot; '+staff.length+' staff</div></div>'+
+    (isCoach()?'<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+      '<button class="btn btn-ghost btn-sm" onclick="showTeamId()">Team ID</button>'+
+      '</div>':'')+'</div><div class="page-body">';
+  if(!players.length&&!staff.length){
+    html+='<div class="empty"><div class="empty-icon">👥</div><div class="empty-title">No teammates yet</div>'+
+      '<div class="empty-body">Share your Team ID so others can join.</div>'+
+      (isCoach()?'<button class="btn btn-primary" style="margin-top:14px;" onclick="showTeamId()">Get Team ID</button>':'')+
+      '</div>';
+  }
+  if(players.length){
+    html+='<div class="sec-header"><div class="sec-title">Players</div></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:24px;">';
+    players.forEach(p=>{
+      html+='<div class="card-sm" style="display:flex;align-items:center;gap:12px;">'+
+        '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--accent);width:36px;text-align:center;flex-shrink:0;">'+(p.number||'—')+'</div>'+
+        '<div class="avatar av-player" style="width:38px;height:38px;font-size:13px;flex-shrink:0;">'+p.initials+'</div>'+
+        '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14px;">'+p.name+'</div>'+
+        '<div style="font-size:12px;color:var(--text2);">'+(p.pos||'')+(p.year?' &middot; '+p.year:'')+'</div>'+
+        (p.status==='injured'?'<span class="badge" style="background:rgba(255,61,26,.12);color:var(--def);font-size:10px;margin-top:3px;">INJURED</span>':'')+
+        '</div></div>';
+    });
+    html+='</div>';
+  }
+  if(staff.length){
+    html+='<div class="sec-header"><div class="sec-title">Staff</div></div><div style="display:flex;flex-direction:column;gap:8px;">';
+    staff.forEach(p=>{
+      const cls=p.role==='coach'?'av-coach':p.role==='ad'?'av-ad':'av-player';
+      const bcls=p.role==='coach'?'badge-coach':p.role==='ad'?'badge-ad':'badge-player';
+      html+='<div class="card-sm" style="display:flex;align-items:center;gap:12px;">'+
+        '<div class="avatar '+cls+'" style="width:38px;height:38px;font-size:13px;flex-shrink:0;">'+p.initials+'</div>'+
+        '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">'+p.name+'</div>'+
+        '<div style="font-size:12px;color:var(--text2);">'+(p.title||p.role)+'</div></div>'+
+        '<span class="badge '+bcls+'">'+p.role.toUpperCase()+'</span></div>';
+    });
+    html+='</div>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function showTeamId(){
+  showModal('<div class="modal-title">Team ID</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Share this ID with players and coaches so they can join your team during signup.</div>'+
+    '<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:14px;font-family:\'DM Mono\',monospace;font-size:13px;word-break:break-all;user-select:all;">'+currentTeam.id+'</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin-top:8px;">Tap to select, then copy.</div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Close</button>'+
+    '<button class="btn btn-primary" onclick="navigator.clipboard.writeText(\''+currentTeam.id+'\').then(()=>showToast(\'Copied!\',\'success\'))">Copy ID</button></div>');
+}
+
+// ── MESSAGES ──
+async function renderMessages(threadId){
+  if(threadId) activeMsgId=threadId;
+  if(!activeMsgId&&MESSAGES.length) activeMsgId=MESSAGES[0].id;
+  const thread=MESSAGES.find(m=>m.id===activeMsgId);
+  let html='<div class="fade-in" style="height:100%;"><div class="msg-layout">';
+  html+='<div class="msg-sidebar"><div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">'+
+    '<span style="font-weight:700;font-size:13px;">Messages</span>'+
+    (isCoach()?'<button class="btn btn-ghost btn-sm btn-icon" onclick="newThreadModal()" title="New thread"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>':'')+
+    '</div>';
+  if(!MESSAGES.length) html+='<div style="padding:20px;text-align:center;font-size:12px;color:var(--text3);">No messages yet</div>';
+  MESSAGES.forEach(m=>{
+    const last=m.msgs[m.msgs.length-1];
+    html+='<div class="msg-thread'+(m.id===activeMsgId?' active':'')+'" onclick="renderMessages(\''+m.id+'\')">';
+    html+='<div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+m.thread_name+'</div>';
+    if(last) html+='<div style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">'+(last.senderName?last.senderName.split(' ')[0]+': ':'')+last.text+'</div>';
+    if(m.coach_only) html+='<div style="font-size:9px;color:var(--purple);margin-top:2px;font-weight:700;letter-spacing:.5px;">STAFF ONLY</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  if(thread){
+    html+='<div class="msg-main">'+
+      '<div class="msg-header"><div style="font-weight:700;font-size:14px;">'+thread.thread_name+'</div>'+
+      (thread.coach_only?'<div style="font-size:10px;color:var(--purple);font-weight:700;letter-spacing:.5px;">STAFF ONLY</div>':'')+
+      '</div>';
+    html+='<div class="msg-area" id="msgArea">';
+    thread.msgs.forEach(msg=>{
+      const mine=msg.from===currentUser.id;
+      html+='<div style="display:flex;flex-direction:column;align-items:'+(mine?'flex-end':'flex-start')+';gap:3px;">';
+      if(!mine) html+='<div style="font-size:11px;color:var(--text3);padding:0 4px;">'+(msg.senderName||'')+'</div>';
+      html+='<div class="bubble '+(mine?'bubble-mine':'bubble-theirs')+'">'+msg.text+'</div>';
+      html+='<div style="font-size:10px;color:var(--text3);padding:0 4px;">'+msg.time+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+    html+='<div class="msg-input-row"><input id="msgInput" placeholder="Message..." style="flex:1;" onkeydown="if(event.key===\'Enter\')sendMsg(\''+thread.id+'\')">'+
+      '<button class="btn btn-primary" onclick="sendMsg(\''+thread.id+'\')">Send</button></div>';
+    html+='</div>';
+  } else {
+    html+='<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;">Select a thread</div>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+  const area=document.getElementById('msgArea');
+  if(area) area.scrollTop=area.scrollHeight;
+}
+async function sendMsg(tid){
+  const input=document.getElementById('msgInput');
+  if(!input||!input.value.trim()) return;
+  const text=input.value.trim();
+  input.value='';
+  const {data,error}=await sb.from('message_posts').insert({thread_id:tid,sender_id:currentUser.id,text}).select().single();
+  if(error){showToast('Send failed','warn');return;}
+  const thread=MESSAGES.find(m=>m.id===tid);
+  if(thread) thread.msgs.push({id:data.id,from:currentUser.id,text,time:fmtDate(data.created_at),senderName:currentProfile.name,initials:currentProfile.initials});
+  renderMessages(tid);
+}
+function newThreadModal(){
+  const members=ROSTER.map(r=>'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;">'+
+    '<input type="checkbox" id="mc-'+r.id+'" value="'+r.id+'">'+
+    '<label for="mc-'+r.id+'" style="cursor:pointer;font-size:13px;">'+r.name+' — '+( r.title||r.role)+'</label></div>').join('');
+  showModal('<div class="modal-title">New Thread</div>'+
+    '<div class="form-group"><label class="form-label">Thread Name</label><input id="ntName" placeholder="Team All, Offense Group..."></div>'+
+    '<div class="form-group"><label class="form-label">Staff Only?</label>'+
+    '<div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="ntCoachOnly"><label for="ntCoachOnly" style="font-size:13px;cursor:pointer;">Coaches &amp; staff only</label></div></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveThread()">Create</button></div>');
+}
+async function saveThread(){
+  const name=document.getElementById('ntName').value.trim();
+  if(!name){showToast('Name required','warn');return;}
+  const coachOnly=document.getElementById('ntCoachOnly').checked;
+  const {data,error}=await sb.from('messages').insert({team_id:currentTeam.id,thread_name:name,thread_type:'group',coach_only:coachOnly}).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  MESSAGES.push({...data,msgs:[],unread:0});
+  activeMsgId=data.id;
+  closeModal();renderMessages(data.id);
+}
+
+// ── AVAILABILITY ──
+function renderAvailability(){
+  const coach=isCoach();
+  const players=ROSTER.filter(r=>r.role==='player');
+  const full=players.filter(p=>AVAILABILITY[p.id]==='full').length;
+  const limited=players.filter(p=>AVAILABILITY[p.id]==='limited').length;
+  const out=players.filter(p=>AVAILABILITY[p.id]==='out').length;
+  const statusLabel={full:'Full Go',limited:'Limited',out:'Out',pending:'No Response'};
+  const statusColor={full:'var(--green)',limited:'var(--orange)',out:'var(--def)',pending:'var(--text3)'};
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Availability</div></div></div><div class="page-body">';
+  if(coach){
+    html+='<div class="grid-4" style="margin-bottom:20px;">'+
+      '<div class="stat-card"><div class="stat-val" style="color:var(--green)">'+full+'</div><div class="stat-lbl">Full Go</div></div>'+
+      '<div class="stat-card"><div class="stat-val" style="color:var(--orange)">'+limited+'</div><div class="stat-lbl">Limited</div></div>'+
+      '<div class="stat-card"><div class="stat-val" style="color:var(--def)">'+out+'</div><div class="stat-lbl">Out</div></div>'+
+      '<div class="stat-card"><div class="stat-val" style="color:var(--text3)">'+(players.length-full-limited-out)+'</div><div class="stat-lbl">Pending</div></div></div>';
+  } else {
+    const mySt=AVAILABILITY[currentUser.id]||'pending';
+    html+='<div class="card card-accent" style="margin-bottom:20px;">'+
+      '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">Your Availability</div>'+
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Let your coaches know.</div>'+
+      '<div style="display:flex;gap:8px;">'+
+      '<button class="avail-btn'+(mySt==='full'?' sel-full':'')+'" onclick="setMyAvail(\'full\')">✓ Full Go</button>'+
+      '<button class="avail-btn'+(mySt==='limited'?' sel-limited':'')+'" onclick="setMyAvail(\'limited\')">⚡ Limited</button>'+
+      '<button class="avail-btn'+(mySt==='out'?' sel-out':'')+'" onclick="setMyAvail(\'out\')">✕ Out</button>'+
+      '</div></div>';
+  }
+  if(!players.length) html+='<div class="empty"><div class="empty-icon">👥</div><div class="empty-title">No players yet</div></div>';
+  players.forEach(p=>{
+    const st=AVAILABILITY[p.id]||'pending';
+    const isMe=p.id===currentUser.id;
+    html+='<div class="avail-row">'+
+      '<div class="avail-dot '+st+'"></div>'+
+      '<div class="avatar av-player" style="width:30px;height:30px;font-size:10px;flex-shrink:0;">'+p.initials+'</div>'+
+      '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+p.name+(isMe?' <span style="color:var(--text3);font-size:11px;">(You)</span>':'')+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+(p.pos||'')+(p.number?' #'+p.number:'')+'</div></div>'+
+      '<span style="font-size:11px;font-weight:700;color:'+statusColor[st]+';">'+statusLabel[st]+'</span>';
+    if(coach){
+      html+='<div class="avail-btns">'+
+        '<button class="avail-btn'+(AVAILABILITY[p.id]==='full'?' sel-full':'')+'" onclick="setAvail(\''+p.id+'\',\'full\')">✓</button>'+
+        '<button class="avail-btn'+(AVAILABILITY[p.id]==='limited'?' sel-limited':'')+'" onclick="setAvail(\''+p.id+'\',\'limited\')">⚡</button>'+
+        '<button class="avail-btn'+(AVAILABILITY[p.id]==='out'?' sel-out':'')+'" onclick="setAvail(\''+p.id+'\',\'out\')">✕</button>'+
+        '</div>';
+    }
+    html+='</div>';
+  });
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+async function setMyAvail(status){
+  AVAILABILITY[currentUser.id]=status;
+  await sb.from('availability').upsert({player_id:currentUser.id,team_id:currentTeam.id,status,updated_at:new Date().toISOString()});
+  showToast('Availability updated','success');renderAvailability();
+}
+async function setAvail(playerId,status){
+  AVAILABILITY[playerId]=status;
+  await sb.from('availability').upsert({player_id:playerId,team_id:currentTeam.id,status,updated_at:new Date().toISOString()});
+  renderAvailability();
+}
+
+// ── SCHEDULE ──
+function renderSchedule(){
+  const coach=isCoach();
+  const nextGame=SCHEDULE_EVENTS.filter(e=>e.type==='game').sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const daysUntil=nextGame?Math.max(0,Math.ceil((new Date(nextGame.date)-new Date())/(864e5))):null;
+  const firstDay=new Date(calYear,calMonth,1);
+  const lastDay=new Date(calYear,calMonth+1,0);
+  const pad=firstDay.getDay();
+  const dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const todayStr=new Date().toISOString().slice(0,10);
+  let cells='';
+  for(let i=0;i<pad;i++) cells+='<div class="cal-day other-month"></div>';
+  for(let d=1;d<=lastDay.getDate();d++){
+    const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const evs=SCHEDULE_EVENTS.filter(e=>e.date===ds);
+    cells+='<div class="cal-day'+(ds===todayStr?' today':'')+'" onclick="showDayModal(\''+ds+'\')">';
+    cells+='<div class="cal-day-num">'+d+'</div>';
+    evs.forEach(e=>{cells+='<div class="cal-event-dot '+e.type+'">'+e.title+'</div>';});
+    cells+='</div>';
+  }
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Schedule</div></div>'+
+    (coach?'<button class="btn btn-primary" onclick="addEventModal()">+ Add Event</button>':'')+
+    '</div><div class="page-body">';
+  if(daysUntil!==null){
+    html+='<div class="countdown-band"><div>'+
+      '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--def);margin-bottom:4px;">NEXT GAME</div>'+
+      '<div style="font-weight:700;font-size:16px;">'+nextGame.title+'</div>'+
+      '<div style="font-size:12px;color:var(--text2);margin-top:2px;">'+nextGame.date+' &middot; '+(nextGame.time||'')+'</div>'+
+      '</div><div style="margin-left:auto;text-align:center;">'+
+      '<div class="countdown-num">'+daysUntil+'</div>'+
+      '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;">DAYS AWAY</div>'+
+      '</div></div>';
+  }
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'+
+    '<button class="btn btn-ghost btn-sm" onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderSchedule()">‹ Prev</button>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;letter-spacing:1px;">'+months[calMonth]+' '+calYear+'</div>'+
+    '<button class="btn btn-ghost btn-sm" onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderSchedule()">Next ›</button></div>';
+  html+='<div class="cal-header-row">'+dows.map(d=>'<div class="cal-dow">'+d+'</div>').join('')+'</div>';
+  html+='<div class="cal-grid">'+cells+'</div>';
+  html+='<div class="sec-header" style="margin-top:28px;"><div class="sec-title">All Events</div></div>';
+  SCHEDULE_EVENTS.forEach(e=>{
+    html+='<div class="ev-row">'+
+      '<div style="width:10px;height:10px;border-radius:50%;background:'+evColor(e.type)+';flex-shrink:0;"></div>'+
+      '<div style="min-width:90px;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2);">'+e.date+'</div>'+
+      '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+e.title+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+(e.time||'')+( e.location?' &middot; '+e.location:'')+'</div></div>'+
+      (e.type==='game'?'<span class="badge" style="background:rgba(255,61,26,.12);color:var(--def);">GAME</span>':'')+
+      (coach?'<button class="btn btn-ghost btn-sm btn-icon" onclick="deleteEvent(\''+e.id+'\')" style="color:var(--text3);">&times;</button>':'')+
+      '</div>';
+  });
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function showDayModal(ds){
+  const evs=SCHEDULE_EVENTS.filter(e=>e.date===ds);
+  if(!evs.length){if(isCoach()) addEventModal(ds);return;}
+  let html='<div class="modal-title">'+ds+'</div>';
+  evs.forEach(e=>{
+    html+='<div class="card-sm" style="margin-bottom:8px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'+
+      '<div style="width:9px;height:9px;border-radius:50%;background:'+evColor(e.type)+';flex-shrink:0;"></div>'+
+      '<strong style="flex:1;">'+e.title+'</strong><span style="font-size:11px;color:var(--text2);">'+(e.time||'')+'</span></div>'+
+      '<div style="font-size:12px;color:var(--text2);">'+(e.location||'')+(e.notes?' &middot; '+e.notes:'')+'</div></div>';
+  });
+  html+='<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Close</button>'+
+    (isCoach()?'<button class="btn btn-primary" onclick="closeModal();addEventModal(\''+ds+'\')">+ Add</button>':'')+
+    '</div>';
+  showModal(html);
+}
+function addEventModal(ds){
+  ds=ds||'';
+  showModal('<div class="modal-title">Add Event</div>'+
+    '<div class="form-group"><label class="form-label">Title</label><input id="evTitle" placeholder="Practice, Game..."></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Date</label><input id="evDate" type="date" value="'+ds+'"></div>'+
+    '<div class="form-group"><label class="form-label">Time</label><input id="evTime" placeholder="3:30 PM"></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Type</label><select id="evType"><option value="practice">Practice</option><option value="game">Game</option><option value="meeting">Meeting</option><option value="other">Other</option></select></div>'+
+    '<div class="form-group"><label class="form-label">Location</label><input id="evLoc" placeholder="Main Field"></div></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="evNotes" style="min-height:60px;"></textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveEvent()">Save</button></div>');
+}
+async function saveEvent(){
+  const ev={team_id:currentTeam.id,title:document.getElementById('evTitle').value||'Event',type:document.getElementById('evType').value,date:document.getElementById('evDate').value,time:document.getElementById('evTime').value,location:document.getElementById('evLoc').value,notes:document.getElementById('evNotes').value};
+  const {data,error}=await sb.from('schedule_events').insert(ev).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  SCHEDULE_EVENTS.push(data);SCHEDULE_EVENTS.sort((a,b)=>a.date.localeCompare(b.date));
+  closeModal();showToast('Event added','success');renderSchedule();
+}
+async function deleteEvent(id){
+  await sb.from('schedule_events').delete().eq('id',id);
+  SCHEDULE_EVENTS=SCHEDULE_EVENTS.filter(e=>e.id!==id);
+  renderSchedule();
+}
+
+// ── FILM ROOM ──
+function renderFilmRoom(filmId){
+  if(filmId) activeFilmId=filmId;
+  const clip=activeFilmId?FILM_CLIPS.find(f=>f.id===activeFilmId):null;
+  const coach=isCoach();
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Film Room</div><div class="page-sub">'+FILM_CLIPS.length+' clips</div></div>'+
+    (coach?'<button class="btn btn-primary" onclick="addFilmModal()">+ Add Clip</button>':'')+
+    '</div><div class="page-body">';
+  if(clip){
+    html+='<button class="btn btn-ghost btn-sm" onclick="activeFilmId=null;renderFilmRoom()" style="margin-bottom:14px;">← All Clips</button>';
+    html+='<div class="film-player"><iframe src="https://www.youtube.com/embed/'+clip.yt_id+'?rel=0" allowfullscreen></iframe></div>';
+    html+='<h3 style="font-size:18px;margin-bottom:6px;">'+clip.title+'</h3>';
+    html+='<div style="font-size:13px;color:var(--text2);margin-bottom:8px;">'+(clip.description||'')+'</div>';
+    html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+      '<span style="font-size:12px;color:var(--text2);">'+(clip.added_by||'')+'</span>';
+    (clip.tags||[]).forEach(t=>{html+='<span class="play-tag">'+t+'</span>';});
+    if(clip.play_id) html+='<button class="btn btn-ghost btn-sm" onclick="openPlay(\''+clip.play_id+'\')">View Play →</button>';
+    html+='</div><div style="border-top:1px solid var(--border);margin-top:20px;"></div>';
+  }
+  html+='<div class="film-grid" style="margin-top:'+(clip?'16px':'0')+';">';
+  if(!FILM_CLIPS.length) html+='<div class="empty" style="grid-column:1/-1;"><div class="empty-icon">🎬</div><div class="empty-title">No film clips yet</div></div>';
+  FILM_CLIPS.forEach(f=>{
+    html+='<div class="film-card" onclick="renderFilmRoom(\''+f.id+'\')">';
+    html+='<div class="film-thumb"><img src="https://img.youtube.com/vi/'+f.yt_id+'/hqdefault.jpg" alt="" onerror="this.style.display=\'none\'">'+
+      '<div class="film-play-btn"><svg viewBox="0 0 24 24" fill="white" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>';
+    html+='<div class="film-info"><div class="film-title">'+f.title+'</div>'+
+      '<div class="film-meta">'+(f.added_by||'')+'</div>'+
+      '<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">';
+    (f.tags||[]).forEach(t=>{html+='<span class="play-tag">'+t+'</span>';});
+    html+='</div></div></div>';
+  });
+  html+='</div></div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function addFilmModal(){
+  showModal('<div class="modal-title">Add Film Clip</div>'+
+    '<div class="form-group"><label class="form-label">Title</label><input id="fTitle" placeholder="Clip title"></div>'+
+    '<div class="form-group"><label class="form-label">YouTube URL or ID</label><input id="fYt" placeholder="https://youtube.com/watch?v=..."></div>'+
+    '<div class="form-group"><label class="form-label">Description</label><textarea id="fDesc" style="min-height:60px;"></textarea></div>'+
+    '<div class="form-group"><label class="form-label">Linked Play (optional)</label><select id="fPlay"><option value="">— None —</option>'+
+    PLAYS.map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join('')+'</select></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveFilmClip()">Add Clip</button></div>');
+}
+async function saveFilmClip(){
+  const url=document.getElementById('fYt').value;
+  const ytId=url.includes('v=')?url.split('v=')[1].split('&')[0]:url.split('/').pop().split('?')[0];
+  const {data,error}=await sb.from('film_clips').insert({team_id:currentTeam.id,title:document.getElementById('fTitle').value||'New Clip',play_id:document.getElementById('fPlay').value||null,description:document.getElementById('fDesc').value,yt_id:ytId,added_by:currentProfile.name,tags:[]}).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  FILM_CLIPS.unshift(data);closeModal();showToast('Clip added','success');renderFilmRoom();
+}
+
+// ── STATS ──
+function renderStats(){
+  let totPass={att:0,comp:0,yds:0,td:0,int:0};
+  let totRush={car:0,yds:0,td:0};
+  GAME_STATS.forEach(g=>{
+    if(g.passing){totPass.att+=(g.passing.att||0);totPass.comp+=(g.passing.comp||0);totPass.yds+=(g.passing.yds||0);totPass.td+=(g.passing.td||0);totPass.int+=(g.passing.int||0);}
+    if(g.rushing){totRush.car+=(g.rushing.car||0);totRush.yds+=(g.rushing.yds||0);totRush.td+=(g.rushing.td||0);}
+  });
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Season Stats</div>'+
+    '<div class="page-sub">'+(currentTeam?.record||'')+'</div></div>'+
+    (isCoach()?'<button class="btn btn-primary" onclick="logGameModal()">+ Log Game</button>':'')+
+    '</div><div class="page-body">';
+  html+='<div class="grid-4" style="margin-bottom:24px;">'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--accent)">'+totPass.yds+'</div><div class="stat-lbl">Pass Yards</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+totRush.yds+'</div><div class="stat-lbl">Rush Yards</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--green)">'+(totPass.td+totRush.td)+'</div><div class="stat-lbl">Touchdowns</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--def)">'+totPass.int+'</div><div class="stat-lbl">Turnovers</div></div></div>';
+  const tabs=['passing','rushing','games'];
+  html+='<div class="tabs">';
+  tabs.forEach(t=>{html+='<div class="tab'+(statsTab===t?' active':'')+'" onclick="statsTab=\''+t+'\';renderStats()">'+t.charAt(0).toUpperCase()+t.slice(1)+'</div>';});
+  html+='</div>';
+  if(!GAME_STATS.length){html+='<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">No games logged yet</div></div>';}
+  else if(statsTab==='passing'){
+    html+='<div class="card"><table class="stat-table">'+
+      '<tr><th>Stat</th><th>Total</th><th>Per Game</th></tr>'+
+      '<tr><td>Completions</td><td>'+totPass.comp+'/'+totPass.att+'</td><td>'+(GAME_STATS.length?Math.round(totPass.comp/GAME_STATS.length*10)/10:'—')+'</td></tr>'+
+      '<tr><td>Comp %</td><td>'+(totPass.att?Math.round(totPass.comp/totPass.att*100)+'%':'—')+'</td><td>—</td></tr>'+
+      '<tr><td>Yards</td><td>'+totPass.yds+'</td><td>'+(GAME_STATS.length?Math.round(totPass.yds/GAME_STATS.length):'—')+'</td></tr>'+
+      '<tr><td>TDs</td><td>'+totPass.td+'</td><td>'+(GAME_STATS.length?Math.round(totPass.td/GAME_STATS.length*10)/10:'—')+'</td></tr>'+
+      '<tr><td>INTs</td><td>'+totPass.int+'</td><td>—</td></tr>'+
+      '</table></div>';
+  } else if(statsTab==='rushing'){
+    html+='<div class="card"><table class="stat-table">'+
+      '<tr><th>Stat</th><th>Total</th><th>Per Game</th></tr>'+
+      '<tr><td>Carries</td><td>'+totRush.car+'</td><td>'+(GAME_STATS.length?Math.round(totRush.car/GAME_STATS.length*10)/10:'—')+'</td></tr>'+
+      '<tr><td>Yards</td><td>'+totRush.yds+'</td><td>'+(GAME_STATS.length?Math.round(totRush.yds/GAME_STATS.length):'—')+'</td></tr>'+
+      '<tr><td>Avg YPC</td><td>'+(totRush.car?Math.round(totRush.yds/totRush.car*10)/10:'—')+'</td><td>—</td></tr>'+
+      '<tr><td>TDs</td><td>'+totRush.td+'</td><td>—</td></tr>'+
+      '</table></div>';
+  } else {
+    html+='<div class="card"><table class="stat-table">'+
+      '<tr><th>Game</th><th>Result</th><th>Pass Yds</th><th>Rush Yds</th><th>TDs</th></tr>';
+    GAME_STATS.forEach(g=>{
+      html+='<tr><td>'+g.game+'</td>'+
+        '<td style="color:'+(g.result?.startsWith('W')?'var(--green)':'var(--def)')+'">'+g.result+'</td>'+
+        '<td>'+(g.passing?.yds||0)+'</td><td>'+(g.rushing?.yds||0)+'</td>'+
+        '<td>'+((g.passing?.td||0)+(g.rushing?.td||0))+'</td></tr>';
+    });
+    html+='</table></div>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function logGameModal(){
+  showModal('<div class="modal-title">Log Game Stats</div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Opponent</label><input id="gsOpp" placeholder="vs Monroe"></div>'+
+    '<div class="form-group"><label class="form-label">Result</label><input id="gsRes" placeholder="W 28-14"></div></div>'+
+    '<div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text2);margin-bottom:8px;margin-top:4px;">PASSING</div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Comp</label><input id="gsComp" type="number"></div>'+
+    '<div class="form-group"><label class="form-label">Att</label><input id="gsAtt" type="number"></div>'+
+    '<div class="form-group"><label class="form-label">Yards</label><input id="gsYds" type="number"></div>'+
+    '<div class="form-group"><label class="form-label">TD</label><input id="gsTd" type="number"></div></div>'+
+    '<div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text2);margin-bottom:8px;">RUSHING</div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Carries</label><input id="gsCar" type="number"></div>'+
+    '<div class="form-group"><label class="form-label">Yards</label><input id="gsRYds" type="number"></div>'+
+    '<div class="form-group"><label class="form-label">TD</label><input id="gsRTd" type="number"></div></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveGameStats()">Save</button></div>');
+}
+async function saveGameStats(){
+  const row={team_id:currentTeam.id,game:document.getElementById('gsOpp').value||'vs TBD',result:document.getElementById('gsRes').value||'—',passing:{comp:+document.getElementById('gsComp').value||0,att:+document.getElementById('gsAtt').value||0,yds:+document.getElementById('gsYds').value||0,td:+document.getElementById('gsTd').value||0,int:0},rushing:{car:+document.getElementById('gsCar').value||0,yds:+document.getElementById('gsRYds').value||0,td:+document.getElementById('gsRTd').value||0},game_date:new Date().toISOString().slice(0,10)};
+  const {data,error}=await sb.from('game_stats').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  GAME_STATS.unshift(data);closeModal();showToast('Stats logged','success');renderStats();
+}
+
+// ── INJURIES ──
+function renderInjuries(){
+  if(!isCoach()){showView('dashboard');return;}
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Injury Log</div><div class="page-sub">Staff only</div></div>'+
+    '<button class="btn btn-primary" onclick="logInjuryModal()">+ Log Injury</button></div><div class="page-body">';
+  html+='<div class="grid-4" style="margin-bottom:24px;">'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--def)">'+INJURIES.filter(i=>i.status==='out').length+'</div><div class="stat-lbl">Out</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--orange)">'+INJURIES.filter(i=>i.status==='limited').length+'</div><div class="stat-lbl">Limited</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+INJURIES.length+'</div><div class="stat-lbl">Total Active</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--green)">'+ROSTER.filter(r=>r.role==='player'&&r.status==='active').length+'</div><div class="stat-lbl">Healthy</div></div></div>';
+  if(!INJURIES.length) html+='<div class="empty"><div class="empty-icon">🏃</div><div class="empty-title">No active injuries</div></div>';
+  INJURIES.forEach(inj=>{
+    const p=ROSTER.find(r=>r.id===inj.player_id);
+    html+='<div class="inj-row"><div class="inj-sev '+inj.severity+'"></div>'+
+      '<div style="flex:1;">'+
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'+
+      '<span style="font-weight:700;font-size:15px;">'+(p?.name||inj.player_id)+'</span>'+
+      (p?'<span style="font-size:11px;color:var(--text2);">'+(p.pos||'')+' #'+(p.number||'')+'</span>':'')+
+      '<span class="badge '+(inj.status==='out'?'badge-draft':'')+'" style="'+(inj.status==='limited'?'background:rgba(255,149,0,.12);color:var(--orange);':'')+'">'+(inj.status||'').toUpperCase()+'</span>'+
+      '</div>'+
+      '<div style="font-size:13px;font-weight:600;margin-bottom:3px;">'+inj.type+'</div>'+
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:6px);">'+(inj.notes||'')+'</div>'+
+      '<span class="inj-eta">📅 ETA: '+(inj.eta||'TBD')+'</span>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:6px;">'+
+      '<button class="btn btn-ghost btn-sm" onclick="clearInjury(\''+inj.id+'\',\''+inj.player_id+'\')">Clear</button>'+
+      '</div></div>';
+  });
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function logInjuryModal(){
+  const players=ROSTER.filter(r=>r.role==='player');
+  showModal('<div class="modal-title">Log Injury</div>'+
+    '<div class="form-group"><label class="form-label">Player</label><select id="injPlayer">'+
+    players.map(r=>'<option value="'+r.id+'">'+r.name+(r.pos?' — '+r.pos:'')+'</option>').join('')+'</select></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Injury Type</label><input id="injType" placeholder="Hamstring Strain..."></div>'+
+    '<div class="form-group"><label class="form-label">Severity</label><select id="injSev"><option value="minor">Minor</option><option value="moderate">Moderate</option><option value="major">Major</option></select></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">ETA</label><input id="injEta" placeholder="1 week..."></div>'+
+    '<div class="form-group"><label class="form-label">Status</label><select id="injStatus"><option value="limited">Limited</option><option value="out">Out</option></select></div></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="injNotes" style="min-height:60px;"></textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveInjury()">Log Injury</button></div>');
+}
+async function saveInjury(){
+  const pid=document.getElementById('injPlayer').value;
+  const row={team_id:currentTeam.id,player_id:pid,type:document.getElementById('injType').value,severity:document.getElementById('injSev').value,status:document.getElementById('injStatus').value,eta:document.getElementById('injEta').value,notes:document.getElementById('injNotes').value};
+  const {data,error}=await sb.from('injuries').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  INJURIES.unshift(data);
+  // update profile status
+  await sb.from('profiles').update({status:'injured'}).eq('id',pid);
+  const pidx=ROSTER.findIndex(r=>r.id===pid);
+  if(pidx>=0) ROSTER[pidx].status='injured';
+  closeModal();showToast('Injury logged','warn');renderInjuries();
+}
+async function clearInjury(injId,playerId){
+  await sb.from('injuries').update({cleared:true}).eq('id',injId);
+  INJURIES=INJURIES.filter(i=>i.id!==injId);
+  await sb.from('profiles').update({status:'active'}).eq('id',playerId);
+  const pidx=ROSTER.findIndex(r=>r.id===playerId);
+  if(pidx>=0) ROSTER[pidx].status='active';
+  showToast('Injury cleared','success');renderInjuries();
+}
+
+// ── SCOUTING ──
+function renderScouting(rId){
+  if(!isCoach()){showView('dashboard');return;}
+  if(rId) activeScoutId=rId;
+  const report=SCOUTING_REPORTS.find(r=>r.id===activeScoutId);
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Scouting</div><div class="page-sub">Staff only</div></div>'+
+    '<button class="btn btn-primary" onclick="addScoutModal()">+ New Report</button></div><div class="page-body">';
+  html+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;">';
+  if(!SCOUTING_REPORTS.length) html+='<div style="font-size:13px;color:var(--text2);">No reports yet. Add your first opponent.</div>';
+  SCOUTING_REPORTS.forEach(r=>{
+    html+='<div class="card-sm" style="cursor:pointer;min-width:160px;'+(activeScoutId===r.id?'border-color:var(--accent);background:rgba(212,240,0,.04);':'')+'" onclick="renderScouting(\''+r.id+'\')">';
+    html+='<div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">'+(r.game_date||'')+'</div>';
+    html+='<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;letter-spacing:1.5px;">'+r.opponent+'</div>';
+    html+='<div style="font-size:12px;color:var(--text2);">'+(r.record||'')+'</div></div>';
+  });
+  html+='</div>';
+  if(report){
+    html+='<div class="grid-2" style="gap:20px;align-items:start;">';
+    html+='<div>';
+    if(report.tendencies?.length){
+      html+='<div class="sec-header"><div class="sec-title">Tendencies</div></div><div class="card" style="padding:0;overflow:hidden;">';
+      report.tendencies.forEach(t=>{
+        html+='<div style="padding:12px 16px;border-bottom:1px solid var(--border);">'+
+          '<div style="display:flex;align-items:center;gap:8px;"><div style="font-size:12px;color:var(--text2);flex:1;">'+t.label+'</div>'+
+          '<div style="font-size:13px;font-weight:700;">'+t.val+'</div>'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--accent);width:36px;text-align:right;">'+t.pct+'%</div></div>'+
+          '<div class="tend-bar-wrap"><div class="tend-bar-fill" style="width:'+t.pct+'%;"></div></div></div>';
+      });
+      html+='</div>';
+    }
+    html+='<div class="sec-header" style="margin-top:20px;"><div class="sec-title">Coach Notes</div></div>';
+    html+='<div class="card" style="background:rgba(181,106,255,.04);border-color:rgba(181,106,255,.2);">'+
+      '<div style="font-size:13px;line-height:1.7;color:var(--text2);">'+(report.coach_notes||'No notes yet.')+'</div>'+
+      (isCoach()?'<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="editScoutNotes(\''+report.id+'\')">Edit Notes</button>':'')+
+      '</div>';
+    html+='</div>';
+    if(report.key_players?.length){
+      html+='<div><div class="sec-header"><div class="sec-title">Key Players</div></div>'+
+        '<div class="card" style="padding:0;overflow:hidden;">';
+      report.key_players.forEach(p=>{
+        html+='<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;">'+
+          '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--def);width:32px;text-align:center;flex-shrink:0;">#'+p.number+'</div>'+
+          '<div><div style="font-weight:700;font-size:14px;">'+p.name+'</div>'+
+          '<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">'+p.pos+'</div>'+
+          '<div style="font-size:12px;color:var(--text2);">'+p.note+'</div></div></div>';
+      });
+      html+='</div></div>';
+    }
+    html+='</div>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function addScoutModal(){
+  showModal('<div class="modal-title">New Scouting Report</div>'+
+    '<div class="form-group"><label class="form-label">Opponent</label><input id="scOpp" placeholder="Team name"></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Game Date</label><input id="scDate" placeholder="Nov 21"></div>'+
+    '<div class="form-group"><label class="form-label">Their Record</label><input id="scRec" placeholder="6-3"></div></div>'+
+    '<div class="form-group"><label class="form-label">Coach Notes</label><textarea id="scNotes" style="min-height:80px;"></textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveScout()">Create</button></div>');
+}
+async function saveScout(){
+  const {data,error}=await sb.from('scouting_reports').insert({team_id:currentTeam.id,opponent:document.getElementById('scOpp').value||'Opponent',game_date:document.getElementById('scDate').value,record:document.getElementById('scRec').value,coach_notes:document.getElementById('scNotes').value,tendencies:[],key_players:[]}).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  SCOUTING_REPORTS.unshift(data);activeScoutId=data.id;closeModal();showToast('Report created','success');renderScouting();
+}
+function editScoutNotes(id){
+  const r=SCOUTING_REPORTS.find(x=>x.id===id);if(!r)return;
+  showModal('<div class="modal-title">Edit Notes — '+r.opponent+'</div>'+
+    '<div class="form-group"><label class="form-label">Coach Notes</label><textarea id="scEditNotes" style="min-height:120px;">'+(r.coach_notes||'')+'</textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveScoutNotes(\''+id+'\')">Save</button></div>');
+}
+async function saveScoutNotes(id){
+  const notes=document.getElementById('scEditNotes').value;
+  await sb.from('scouting_reports').update({coach_notes:notes}).eq('id',id);
+  const idx=SCOUTING_REPORTS.findIndex(r=>r.id===id);
+  if(idx>=0) SCOUTING_REPORTS[idx].coach_notes=notes;
+  closeModal();showToast('Notes saved','success');renderScouting();
+}
+
+// ── PRACTICE PLANNER ──
+function renderPractice(){
+  if(!isCoach()){showView('dashboard');return;}
+  const plan=activePlanDate?PRACTICE_PLANS[activePlanDate]:null;
+  const periods=plan?.periods||[];
+  const totalMins=periods.reduce((a,p)=>a+(p.duration||0),0);
+  const typeColors={ind:'var(--accent)',team:'var(--blue)',st:'var(--orange)',cond:'var(--purple)',mtg:'var(--green)'};
+  const typeLabels={ind:'Individual',team:'Team',st:'Special Teams',cond:'Conditioning',mtg:'Meeting'};
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Practice Planner</div>'+
+    '<div class="page-sub">'+totalMins+' min total</div></div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'+
+    '<button class="btn btn-ghost btn-sm" onclick="newPlanModal()">+ New Plan</button>'+
+    (Object.keys(PRACTICE_PLANS).length?
+      '<select style="width:auto;font-size:13px;" onchange="activePlanDate=this.value;renderPractice()">'+
+      Object.keys(PRACTICE_PLANS).map(d=>'<option value="'+d+'"'+(d===activePlanDate?' selected':'')+'>'+d+'</option>').join('')+
+      '</select>':'')+
+    '<button class="btn btn-primary" onclick="addPeriodModal()">+ Period</button></div></div><div class="page-body">';
+  if(!activePlanDate||!plan){
+    html+='<div class="empty"><div class="empty-icon">⏱</div><div class="empty-title">No practice plans yet</div>'+
+      '<button class="btn btn-primary" style="margin-top:14px;" onclick="newPlanModal()">Create Plan</button></div>';
+  } else {
+    html+='<div id="ppList">';
+    periods.forEach((p,i)=>{
+      html+='<div class="pp-period" draggable="true" data-idx="'+i+'" '+
+        'ondragstart="ppDragIdx='+i+'" '+
+        'ondragover="event.preventDefault();this.classList.add(\'drag-over\')" '+
+        'ondragleave="this.classList.remove(\'drag-over\')" '+
+        'ondrop="ppDrop(event,'+i+')" '+
+        'ondragend="document.querySelectorAll(\'.pp-period\').forEach(function(e){e.classList.remove(\'drag-over\');})">';
+      html+='<div class="pp-head">'+
+        '<div class="pp-dot" style="background:'+(typeColors[p.type]||'var(--text2)')+'"></div>'+
+        '<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2);width:72px;flex-shrink:0;">'+(p.start||'')+'</span>'+
+        '<span style="font-weight:700;font-size:13px;flex:1;">'+p.title+'</span>'+
+        '<span style="font-size:11px;background:var(--bg4);padding:1px 7px;border-radius:4px;color:var(--text2);margin-right:4px;">'+(p.duration||0)+' min</span>'+
+        '<span style="font-size:10px;background:var(--bg4);padding:1px 7px;border-radius:3px;color:var(--text2);margin-right:4px;">'+(typeLabels[p.type]||'')+'</span>'+
+        '<button class="btn btn-ghost btn-icon btn-sm" onclick="editPeriodModal('+i+')">✎</button></div>';
+      if(p.notes) html+='<div class="pp-notes">📋 '+p.notes+'</div>';
+      html+='</div>';
+    });
+    html+='</div><button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;" onclick="addPeriodModal()">+ Period</button>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function newPlanModal(){
+  showModal('<div class="modal-title">New Practice Plan</div>'+
+    '<div class="form-group"><label class="form-label">Date</label><input id="planDate" type="date"></div>'+
+    '<div class="form-group"><label class="form-label">Label</label><input id="planLabel" placeholder="Game Prep, Walk-Through..."></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="savePlan()">Create</button></div>');
+}
+async function savePlan(){
+  const d=document.getElementById('planDate').value;
+  const label=document.getElementById('planLabel').value||'Practice';
+  if(!d){showToast('Date required','warn');return;}
+  const {data,error}=await sb.from('practice_plans').insert({team_id:currentTeam.id,plan_date:d,label,periods:[]}).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  PRACTICE_PLANS[d]={...data,periods:[]};activePlanDate=d;
+  closeModal();renderPractice();
+}
+function addPeriodModal(){
+  showModal('<div class="modal-title">Add Period</div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Title</label><input id="ppTitle" placeholder="7-on-7, Individual..."></div>'+
+    '<div class="form-group"><label class="form-label">Type</label><select id="ppType"><option value="ind">Individual</option><option value="team">Team</option><option value="st">Special Teams</option><option value="cond">Conditioning</option><option value="mtg">Meeting</option></select></div></div>'+
+    '<div class="form-row"><div class="form-group"><label class="form-label">Start Time</label><input id="ppStart" placeholder="3:30 PM"></div>'+
+    '<div class="form-group"><label class="form-label">Duration (min)</label><input id="ppDur" type="number" value="15"></div></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="ppNotes" style="min-height:60px;"></textarea></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="savePeriod()">Add</button></div>');
+}
+async function savePeriod(){
+  if(!activePlanDate){showToast('Create a plan first','warn');return;}
+  const period={id:'pp'+Date.now(),title:document.getElementById('ppTitle').value||'Period',type:document.getElementById('ppType').value,start:document.getElementById('ppStart').value,duration:parseInt(document.getElementById('ppDur').value)||15,notes:document.getElementById('ppNotes').value};
+  PRACTICE_PLANS[activePlanDate].periods.push(period);
+  await sb.from('practice_plans').update({periods:PRACTICE_PLANS[activePlanDate].periods}).eq('id',PRACTICE_PLANS[activePlanDate].id);
+  closeModal();renderPractice();
+}
+function editPeriodModal(idx){
+  const p=PRACTICE_PLANS[activePlanDate].periods[idx];
+  showModal('<div class="modal-title">Edit Period</div>'+
+    '<div class="form-group"><label class="form-label">Title</label><input id="ppTitle" value="'+p.title+'"></div>'+
+    '<div class="form-group"><label class="form-label">Notes</label><textarea id="ppNotes" style="min-height:60px;">'+p.notes+'</textarea></div>'+
+    '<div class="modal-actions">'+
+    '<button class="btn btn-danger btn-sm" onclick="removePeriod('+idx+')">Remove</button>'+
+    '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="updatePeriod('+idx+')">Save</button></div>');
+}
+async function updatePeriod(idx){
+  PRACTICE_PLANS[activePlanDate].periods[idx].title=document.getElementById('ppTitle').value;
+  PRACTICE_PLANS[activePlanDate].periods[idx].notes=document.getElementById('ppNotes').value;
+  await sb.from('practice_plans').update({periods:PRACTICE_PLANS[activePlanDate].periods}).eq('id',PRACTICE_PLANS[activePlanDate].id);
+  closeModal();renderPractice();
+}
+async function removePeriod(idx){
+  PRACTICE_PLANS[activePlanDate].periods.splice(idx,1);
+  await sb.from('practice_plans').update({periods:PRACTICE_PLANS[activePlanDate].periods}).eq('id',PRACTICE_PLANS[activePlanDate].id);
+  closeModal();renderPractice();
+}
+function ppDrop(e,toIdx){
+  e.preventDefault();
+  document.querySelectorAll('.pp-period').forEach(el=>el.classList.remove('drag-over'));
+  if(ppDragIdx===null||ppDragIdx===toIdx) return;
+  const periods=PRACTICE_PLANS[activePlanDate].periods;
+  const moved=periods.splice(ppDragIdx,1)[0];
+  periods.splice(toIdx,0,moved);
+  ppDragIdx=null;
+  sb.from('practice_plans').update({periods}).eq('id',PRACTICE_PLANS[activePlanDate].id);
+  renderPractice();
+}
+
+// ── QUIZ ──
+function renderQuiz(qId){
+  if(qId){activeQuizId=qId;quizAnswers={};quizSubmitted=false;}
+  if(isCoach()){renderQuizCoach();return;}
+  const quiz=QUIZZES.find(q=>q.id===activeQuizId);
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Quizzes</div></div></div><div class="page-body">';
+  html+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">';
+  if(!QUIZZES.length) html+='<div class="empty"><div class="empty-icon">📝</div><div class="empty-title">No quizzes yet</div></div>';
+  QUIZZES.forEach(q=>{
+    const res=q.playerResults[currentUser.id];
+    html+='<div class="card-sm" style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="renderQuiz(\''+q.id+'\')">';
+    html+='<div style="flex:1;"><div style="font-weight:700;font-size:14px;">'+q.title+'</div>'+
+      '<div style="font-size:12px;color:var(--text2);">'+q.assigned_by+' &middot; Due '+q.due_date+' &middot; '+q.questions.length+' questions</div></div>';
+    html+=(res&&res.done?'<span class="badge badge-installed">✓ '+res.score+'/'+q.questions.length+'</span>':'<span class="badge badge-draft">NEW</span>');
+    html+='</div>';
+  });
+  html+='</div>';
+  if(quiz){
+    const myRes=quiz.playerResults[currentUser.id];
+    html+='<div style="max-width:600px;">';
+    html+='<h3 style="font-size:18px;margin-bottom:4px;">'+quiz.title+'</h3>'+
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:20px;">'+quiz.questions.length+' questions &middot; Due '+quiz.due_date+'</div>';
+    if(myRes&&myRes.done&&!quizSubmitted){
+      html+='<div class="card" style="text-align:center;margin-bottom:20px;background:rgba(212,240,0,.04);border-color:rgba(212,240,0,.2);">'+
+        '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:40px;color:var(--accent);">'+myRes.score+'/'+quiz.questions.length+'</div>'+
+        '<div style="font-size:14px;font-weight:700;margin-top:4px;">'+(myRes.score===quiz.questions.length?'Perfect!':myRes.score>=quiz.questions.length*.7?'Good work':'Keep studying')+'</div>'+
+        '<button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="quizAnswers={};quizSubmitted=false;renderQuiz(\''+quiz.id+'\')">Retake</button></div>';
+    }
+    quiz.questions.forEach((q,qi)=>{
+      const submitted=quizSubmitted||(myRes&&myRes.done);
+      html+='<div class="card" style="margin-bottom:12px;">';
+      html+='<div style="font-weight:700;font-size:15px;margin-bottom:14px;line-height:1.5;">'+(qi+1)+'. '+q.q+'</div>';
+      q.opts.forEach((opt,oi)=>{
+        let cls='quiz-opt';
+        if(submitted){
+          if(oi===q.answer) cls+=' correct';
+          else if(quizAnswers[qi]===oi||(myRes&&myRes.answers&&myRes.answers[qi]===oi&&oi!==q.answer)) cls+=' wrong';
+        } else {
+          if(quizAnswers[qi]===oi) cls+=' sel';
+        }
+        const onclick=submitted?'':'onclick="quizAnswers['+qi+']='+oi+';renderQuiz()"';
+        html+='<div class="'+cls+'" '+onclick+'>'+String.fromCharCode(65+oi)+'. '+opt+'</div>';
+      });
+      if(submitted) html+='<div style="font-size:12px;color:var(--text2);margin-top:8px;padding:8px;background:var(--bg4);border-radius:var(--r);">💡 '+q.explain+'</div>';
+      html+='</div>';
+    });
+    if(!(myRes&&myRes.done)&&!quizSubmitted){
+      html+='<button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="submitQuiz(\''+quiz.id+'\')">Submit Answers</button>';
+    }
+    html+='</div>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+async function submitQuiz(qId){
+  const quiz=QUIZZES.find(q=>q.id===qId);if(!quiz)return;
+  let score=0;
+  quiz.questions.forEach((q,i)=>{if(quizAnswers[i]===q.answer) score++;});
+  const answers=quiz.questions.map((_,i)=>quizAnswers[i]??-1);
+  const {data,error}=await sb.from('quiz_results').upsert({quiz_id:qId,player_id:currentUser.id,score,answers}).select().single();
+  if(error){showToast('Submit failed: '+error.message,'warn');return;}
+  quiz.playerResults[currentUser.id]={score,answers,done:true,id:data.id};
+  quizSubmitted=true;showToast('Submitted — '+score+'/'+quiz.questions.length+' correct','success');renderQuiz();
+}
+function renderQuizCoach(){
+  const quiz=QUIZZES.find(q=>q.id===activeQuizId);
+  const players=ROSTER.filter(r=>r.role==='player');
+  const completed=quiz?players.filter(p=>quiz.playerResults[p.id]?.done).length:0;
+  let avgScore=0;
+  if(quiz&&completed>0){
+    avgScore=Math.round(players.reduce((a,p)=>a+(quiz.playerResults[p.id]?.score||0),0)/completed*10)/10;
+  }
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Quizzes</div></div>'+
+    '<button class="btn btn-primary" onclick="createQuizModal()">+ Create Quiz</button></div><div class="page-body">';
+  html+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;">';
+  if(!QUIZZES.length) html+='<div style="font-size:13px;color:var(--text2);">No quizzes yet.</div>';
+  QUIZZES.forEach(q=>{
+    html+='<div class="card-sm" style="cursor:pointer;min-width:200px;'+(activeQuizId===q.id?'border-color:var(--accent);background:rgba(212,240,0,.04);':'')+'" onclick="activeQuizId=\''+q.id+'\';renderQuizCoach()">';
+    html+='<div style="font-weight:700;font-size:13px;">'+q.title+'</div>';
+    html+='<div style="font-size:11px;color:var(--text2);">Due '+q.due_date+'</div></div>';
+  });
+  html+='</div>';
+  if(quiz){
+    html+='<div class="grid-2" style="gap:20px;align-items:start;">';
+    html+='<div><div class="grid-2" style="margin-bottom:16px;">'+
+      '<div class="stat-card"><div class="stat-val" style="color:var(--green)">'+completed+'/'+players.length+'</div><div class="stat-lbl">Completed</div></div>'+
+      '<div class="stat-card"><div class="stat-val" style="color:var(--accent)">'+avgScore+'</div><div class="stat-lbl">Avg Score</div></div></div>';
+    html+='<div class="card" style="padding:0;overflow:hidden;">'+
+      '<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text3);">PLAYER RESULTS</div>';
+    players.forEach(p=>{
+      const res=quiz.playerResults[p.id];
+      html+='<div class="receipt-row" style="padding:10px 14px;">'+
+        '<div class="avatar av-player" style="width:28px;height:28px;font-size:10px;">'+p.initials+'</div>'+
+        '<div style="flex:1;font-weight:600;">'+p.name+'</div>';
+      if(res?.done){
+        const c=res.score===quiz.questions.length?'var(--green)':res.score>=quiz.questions.length*.7?'var(--accent)':'var(--def)';
+        html+='<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:'+c+';">'+res.score+'/'+quiz.questions.length+'</span>';
+      } else html+='<span style="font-size:11px;color:var(--text3);">Not done</span>';
+      html+='</div>';
+    });
+    html+='</div></div>';
+    html+='<div><div class="sec-header"><div class="sec-title">Question Results</div></div>';
+    quiz.questions.forEach((q,qi)=>{
+      const doneArr=Object.values(quiz.playerResults).filter(r=>r.done);
+      const correct=doneArr.filter(r=>r.answers&&r.answers[qi]===q.answer).length;
+      const pct=doneArr.length?Math.round(correct/doneArr.length*100):0;
+      const bc=pct>=70?'var(--green)':pct>=40?'var(--orange)':'var(--def)';
+      html+='<div class="card-sm" style="margin-bottom:8px;">'+
+        '<div style="font-size:12px;font-weight:700;margin-bottom:6px;">'+(qi+1)+'. '+q.q+'</div>'+
+        '<div style="display:flex;align-items:center;gap:8px;">'+
+        '<div class="progress" style="flex:1;height:6px;"><div class="progress-fill" style="width:'+pct+'%;background:'+bc+';"></div></div>'+
+        '<span style="font-size:12px;font-weight:700;color:'+bc+';">'+pct+'%</span></div>'+
+        '<div style="font-size:11px;color:var(--text2);margin-top:2px;">'+correct+'/'+doneArr.length+' correct</div></div>';
+    });
+    html+='</div></div>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+function createQuizModal(){
+  showModal('<div class="modal-title">Create Quiz</div>'+
+    '<div class="form-group"><label class="form-label">Title</label><input id="qzTitle" placeholder="Mesh Concept — Knowledge Check"></div>'+
+    '<div class="form-group"><label class="form-label">Linked Play</label><select id="qzPlay"><option value="">— None —</option>'+
+    PLAYS.map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join('')+'</select></div>'+
+    '<div class="form-group"><label class="form-label">Due Date</label><input id="qzDue" placeholder="Nov 6"></div>'+
+    '<div style="font-size:12px;color:var(--text2);background:var(--bg3);padding:10px;border-radius:var(--r);margin-top:4px;">Add questions after creating the quiz.</div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveQuiz()">Create</button></div>');
+}
+async function saveQuiz(){
+  const {data,error}=await sb.from('quizzes').insert({team_id:currentTeam.id,play_id:document.getElementById('qzPlay').value||null,title:document.getElementById('qzTitle').value||'New Quiz',assigned_by:currentProfile.name,due_date:document.getElementById('qzDue').value,questions:[]}).select().single();
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  QUIZZES.push({...data,playerResults:{}});activeQuizId=data.id;
+  closeModal();showToast('Quiz created','success');renderQuizCoach();
+}
+
+// ── DEPTH CHART (Supabase) ──
+async function saveDCToSupabase(phase,pos,slots){
+  const arr=DEPTH_CHART[phase][pos];
+  // Upsert each slot
+  const upserts=arr.map((pid,depth)=>({team_id:currentTeam.id,phase,position:pos,depth,player_id:pid||null,slots:arr.length}));
+  await sb.from('depth_chart').upsert(upserts,{onConflict:'team_id,phase,position,depth'});
+}
+async function deleteDCPosition(phase,pos){
+  await sb.from('depth_chart').delete().eq('team_id',currentTeam.id).eq('phase',phase).eq('position',pos);
+}
+
+// ── DEPTH CHART UI (same logic, now saves to Supabase) ──
+function renderDepthChart(){
+  if(!isCoach()){showView('dashboard');return;}
+  var players=ROSTER.filter(function(r){return r.role==='player';});
+  var chart=DEPTH_CHART[dcPhase];
+  var positions=Object.keys(chart);
+  var phaseNames={off:'Offense',def:'Defense',st:'Special Teams'};
+  var dLabels=['1ST','2ND','3RD'];
+  function getPlayer(id){return players.find(function(p){return p.id===id;});}
+  var html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Depth Chart</div>'+
+    '<div class="page-sub" style="display:flex;align-items:center;gap:6px;">'+
+    '<span style="background:rgba(181,106,255,.15);color:var(--purple);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.5px;">STAFF ONLY</span></div></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+    '<button class="btn btn-primary" onclick="addPositionModal()">+ Position</button>'+
+    '<button class="btn btn-ghost" onclick="autoFillDC()">Auto-Fill</button>'+
+    '</div></div>';
+  html+='<div style="display:flex;gap:4px;padding:16px 28px 0;flex-wrap:wrap;">';
+  Object.keys(phaseNames).forEach(function(k){
+    html+='<div style="padding:6px 16px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;border:1px solid '+(dcPhase===k?'rgba(212,240,0,.4)':'var(--border2)')+';color:'+(dcPhase===k?'var(--accent)':'var(--text2)')+';background:'+(dcPhase===k?'rgba(212,240,0,.12)':'transparent')+'" onclick="dcPhase=\''+k+'\';renderDepthChart()">'+phaseNames[k]+' <span style="font-size:10px;opacity:.6;">('+Object.keys(DEPTH_CHART[k]).length+')</span></div>';
+  });
+  html+='</div><div class="page-body">';
+  if(!positions.length) html+='<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No positions yet</div><div class="empty-body">Add positions to build your depth chart.</div></div>';
+  html+='<div class="dc-grid">';
+  positions.forEach(function(pos){
+    var slots=chart[pos];
+    html+='<div class="dc-col"><div class="dc-col-head">'+
+      '<span class="dc-col-pos" style="cursor:pointer;border-bottom:1px dashed rgba(212,240,0,.3);" onclick="editPositionModal(\''+pos+'\')">'+pos+'</span>'+
+      '<div style="display:flex;align-items:center;gap:6px;">'+
+      '<span style="font-size:10px;color:var(--text3);">'+slots.filter(Boolean).length+'/'+slots.length+'</span>'+
+      '<button style="background:none;border:none;color:var(--text3);font-size:16px;padding:0 2px;cursor:pointer;" onclick="editPositionModal(\''+pos+'\')">✎</button>'+
+      '</div></div>';
+    slots.forEach(function(pid,depth){
+      var p=pid?getPlayer(pid):null;
+      var dc='dc-d'+(depth+1);
+      if(!p){
+        html+='<div class="dc-empty" onclick="assignDCSlot(\''+pos+'\','+depth+')">'+
+          '<span class="'+dc+'" style="font-family:\'Bebas Neue\',sans-serif;font-size:14px;width:28px;text-align:center;">'+dLabels[depth]+'</span>'+
+          '<span>&mdash; Assign</span></div>';
+      } else {
+        html+='<div class="dc-slot" draggable="true" '+
+          'ondragstart="dcDragSlot={pos:\''+pos+'\',depth:'+depth+'}" '+
+          'ondragover="event.preventDefault();this.classList.add(\'drag-over\')" '+
+          'ondragleave="this.classList.remove(\'drag-over\')" '+
+          'ondrop="dcDrop(event,\''+pos+'\','+depth+')" '+
+          'ondragend="document.querySelectorAll(\'.dc-slot\').forEach(function(e){e.classList.remove(\'drag-over\',\'dragging\');})">' +
+          '<span class="'+dc+'" style="font-family:\'Bebas Neue\',sans-serif;font-size:14px;width:28px;text-align:center;">'+dLabels[depth]+'</span>'+
+          '<div class="avatar av-player" style="width:26px;height:26px;font-size:9px;flex-shrink:0;">'+p.initials+'</div>'+
+          '<div style="flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.name+'</div>'+
+          '<span style="font-size:11px;color:var(--text3);">#'+(p.number||'')+'</span>'+
+          (p.status==='injured'?'<div style="width:8px;height:8px;background:var(--def);border-radius:50%;flex-shrink:0;"></div>':'')+
+          '<button style="background:none;border:none;color:var(--text3);font-size:14px;padding:0 2px;cursor:pointer;" onclick="dcClearSlot(\''+pos+'\','+depth+')">&times;</button>'+
+          '</div>';
+      }
+    });
+    if(DC_NOTES[pos]) html+='<div class="dc-note">📋 '+DC_NOTES[pos]+'</div>';
+    html+='<div style="padding:6px 8px;border-top:1px solid var(--border);display:flex;gap:4px;">'+
+      '<button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;font-size:11px;" onclick="addDCNote(\''+pos+'\')">+ Note</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="editPositionModal(\''+pos+'\')">✎</button></div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  var unassigned=players.filter(function(p){return !Object.values(chart).some(function(slots){return slots.indexOf(p.id)>=0;});});
+  if(unassigned.length){
+    html+='<div class="sec-header" style="margin-top:24px;"><div class="sec-title">Unassigned</div></div><div style="display:flex;flex-wrap:wrap;gap:8px;">';
+    unassigned.forEach(function(p){
+      html+='<div style="display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 12px;font-size:12px;">'+
+        '<div class="avatar av-player" style="width:26px;height:26px;font-size:9px;">'+p.initials+'</div>'+
+        '<span style="font-weight:600;">'+p.name+'</span>'+
+        '<span style="color:var(--text3);">'+(p.pos||'')+' #'+(p.number||'')+'</span>'+
+        (p.status==='injured'?'<div style="width:7px;height:7px;background:var(--def);border-radius:50%;"></div>':'')+
+        '</div>';
+    });
+    html+='</div>';
+  }
+  html+='</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+async function dcClearSlot(pos,depth){
+  DEPTH_CHART[dcPhase][pos][depth]=null;
+  await saveDCToSupabase(dcPhase,pos,DEPTH_CHART[dcPhase][pos].length);
+  renderDepthChart();
+}
+async function dcDrop(e,toPos,toDepth){
+  e.preventDefault();
+  document.querySelectorAll('.dc-slot').forEach(el=>el.classList.remove('drag-over'));
+  if(!dcDragSlot) return;
+  const fp=dcDragSlot.pos,fd=dcDragSlot.depth;
+  if(fp===toPos&&fd===toDepth){dcDragSlot=null;return;}
+  const tmp=DEPTH_CHART[dcPhase][fp][fd];
+  DEPTH_CHART[dcPhase][fp][fd]=DEPTH_CHART[dcPhase][toPos][toDepth];
+  DEPTH_CHART[dcPhase][toPos][toDepth]=tmp;
+  dcDragSlot=null;
+  await Promise.all([saveDCToSupabase(dcPhase,fp),saveDCToSupabase(dcPhase,toPos)]);
+  renderDepthChart();
+}
+function assignDCSlot(pos,depth){
+  const players=ROSTER.filter(r=>r.role==='player');
+  const chart=DEPTH_CHART[dcPhase];
+  let html='<div class="modal-title">Assign to '+pos+' — '+['1st','2nd','3rd'][depth]+' String</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;">';
+  players.forEach(p=>{
+    const already=Object.values(chart).some(slots=>slots.indexOf(p.id)>=0);
+    html+='<div class="card-sm" style="display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="doAssignDC(\''+pos+'\','+depth+',\''+p.id+'\')">'+
+      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;width:28px;text-align:center;color:var(--accent);">'+(p.number||'#')+'</div>'+
+      '<div class="avatar av-player" style="width:30px;height:30px;font-size:10px;">'+p.initials+'</div>'+
+      '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+p.name+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+(p.pos||'')+' &middot; '+(p.year||'')+'</div></div>'+
+      (p.status==='injured'?'<span class="badge badge-draft">INJURED</span>':'')+
+      (already?'<span style="font-size:10px;color:var(--text3);">assigned</span>':'')+
+      '</div>';
+  });
+  html+='</div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button></div>';
+  showModal(html);
+}
+async function doAssignDC(pos,depth,playerId){
+  DEPTH_CHART[dcPhase][pos][depth]=playerId;
+  await saveDCToSupabase(dcPhase,pos);
+  closeModal();renderDepthChart();
+}
+function addPositionModal(){
+  const phaseNames={off:'Offense',def:'Defense',st:'Special Teams'};
+  showModal('<div class="modal-title">Add Position</div>'+
+    '<div class="form-group"><label class="form-label">Phase</label>'+
+    '<div style="display:flex;gap:8px;">'+
+    Object.keys(phaseNames).map(k=>
+      '<button type="button" id="phaseBtn-'+k+'" class="btn '+(dcPhase===k?'btn-primary':'btn-ghost')+' btn-sm" '+
+      'onclick="document.querySelectorAll(\'[id^=phaseBtn-]\').forEach(b=>{b.className=\'btn btn-ghost btn-sm\';});this.className=\'btn btn-primary btn-sm\';document.getElementById(\'apPhase\').value=\''+k+'\'">'+
+      phaseNames[k]+'</button>'
+    ).join('')+
+    '<input type="hidden" id="apPhase" value="'+dcPhase+'"></div></div>'+
+    '<div class="form-group"><label class="form-label">Position Name</label>'+
+    '<input id="apName" placeholder="e.g. WR3, NICKEL..." maxlength="10" oninput="this.value=this.value.toUpperCase()"></div>'+
+    '<div class="form-group"><label class="form-label">Depth Slots</label>'+
+    '<div style="display:flex;gap:8px;">'+
+    [1,2,3].map(n=>'<button type="button" id="depthBtn-'+n+'" class="btn '+(n===3?'btn-primary':'btn-ghost')+' btn-sm" '+
+      'onclick="document.querySelectorAll(\'[id^=depthBtn-]\').forEach(b=>{b.className=\'btn btn-ghost btn-sm\';});this.className=\'btn btn-primary btn-sm\';document.getElementById(\'apDepth\').value='+n+'">'+n+' slot'+(n>1?'s':'')+'</button>'
+    ).join('')+
+    '<input type="hidden" id="apDepth" value="3"></div></div>'+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveNewPosition()">Add</button></div>');
+}
+async function saveNewPosition(){
+  const name=(document.getElementById('apName').value||'').trim().toUpperCase();
+  const phase=document.getElementById('apPhase').value;
+  const depth=parseInt(document.getElementById('apDepth').value)||3;
+  if(!name){showToast('Name required','warn');return;}
+  if(DEPTH_CHART[phase][name]){showToast(name+' already exists','warn');return;}
+  const slots=Array(depth).fill(null);
+  DEPTH_CHART[phase][name]=slots;
+  await saveDCToSupabase(phase,name);
+  dcPhase=phase;closeModal();showToast(name+' added','success');renderDepthChart();
+}
+function editPositionModal(pos){
+  const slots=DEPTH_CHART[dcPhase][pos];
+  showModal('<div class="modal-title">Edit — '+pos+'</div>'+
+    '<div class="form-group"><label class="form-label">Rename</label>'+
+    '<input id="epName" value="'+pos+'" maxlength="10" oninput="this.value=this.value.toUpperCase()"></div>'+
+    '<div class="form-group"><label class="form-label">Depth Slots</label>'+
+    '<div style="display:flex;gap:8px;">'+
+    [1,2,3].map(n=>'<button type="button" id="epDepthBtn-'+n+'" class="btn '+(slots.length===n?'btn-primary':'btn-ghost')+' btn-sm" '+
+      'onclick="document.querySelectorAll(\'[id^=epDepthBtn-]\').forEach(b=>{b.className=\'btn btn-ghost btn-sm\';});this.className=\'btn btn-primary btn-sm\';document.getElementById(\'epDepth\').value='+n+'">'+n+' slot'+(n>1?'s':'')+'</button>'
+    ).join('')+
+    '<input type="hidden" id="epDepth" value="'+slots.length+'"></div></div>'+
+    '<div class="modal-actions" style="justify-content:space-between;">'+
+    '<button class="btn btn-danger btn-sm" onclick="deletePositionConfirm(\''+pos+'\')">Delete</button>'+
+    '<div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveEditPosition(\''+pos+'\')">Save</button></div></div>');
+}
+async function saveEditPosition(oldPos){
+  const newName=(document.getElementById('epName').value||'').trim().toUpperCase();
+  const newDepth=parseInt(document.getElementById('epDepth').value)||3;
+  if(!newName){showToast('Name required','warn');return;}
+  const chart=DEPTH_CHART[dcPhase];
+  const oldSlots=chart[oldPos];
+  const newSlots=Array(newDepth).fill(null).map((_,i)=>i<oldSlots.length?oldSlots[i]:null);
+  if(newName!==oldPos&&chart[newName]){showToast(newName+' already exists','warn');return;}
+  // Delete old rows if renaming
+  if(newName!==oldPos) await deleteDCPosition(dcPhase,oldPos);
+  const rebuilt={};
+  Object.keys(chart).forEach(k=>{rebuilt[k===oldPos?newName:k]=(k===oldPos?newSlots:chart[k]);});
+  DEPTH_CHART[dcPhase]=rebuilt;
+  if(newName!==oldPos&&DC_NOTES[oldPos]){DC_NOTES[newName]=DC_NOTES[oldPos];delete DC_NOTES[oldPos];}
+  await saveDCToSupabase(dcPhase,newName);
+  closeModal();showToast('Position updated','success');renderDepthChart();
+}
+function deletePositionConfirm(pos){
+  const filled=DEPTH_CHART[dcPhase][pos].filter(Boolean).length;
+  showModal('<div class="modal-title">Delete '+pos+'?</div>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:6px;">This cannot be undone.</p>'+
+    (filled?'<p style="font-size:13px;color:var(--orange);margin-bottom:18px;">⚠ '+filled+' player'+(filled>1?'s':'')+' assigned — will move to Unassigned.</p>':'')+
+    '<div class="modal-actions"><button class="btn btn-ghost" onclick="editPositionModal(\''+pos+'\')">← Back</button>'+
+    '<button class="btn btn-danger" onclick="doDeletePosition(\''+pos+'\')">Delete</button></div>');
+}
+async function doDeletePosition(pos){
+  await deleteDCPosition(dcPhase,pos);
+  delete DEPTH_CHART[dcPhase][pos];delete DC_NOTES[pos];
+  closeModal();showToast(pos+' removed','warn');renderDepthChart();
+}
+function addDCNote(pos){
+  const existing=DC_NOTES[pos]||'';
+  showModal('<div class="modal-title">Coach Note — '+pos+'</div>'+
+    '<div class="form-group"><label class="form-label">Note</label><textarea id="dcNoteText" style="min-height:80px;">'+existing+'</textarea></div>'+
+    '<div class="modal-actions">'+
+    (existing?'<button class="btn btn-danger btn-sm" onclick="delete DC_NOTES[\''+pos+'\'];closeModal();renderDepthChart()">Remove</button>':'')+
+    '<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="saveDCNote(\''+pos+'\')">Save</button></div>');
+}
+function saveDCNote(pos){
+  const t=document.getElementById('dcNoteText').value.trim();
+  if(t) DC_NOTES[pos]=t; else delete DC_NOTES[pos];
+  closeModal();showToast('Note saved','success');renderDepthChart();
+}
+async function autoFillDC(){
+  const posMap={QB:['QB'],RB:['RB'],WR:['WR1','WR2'],TE:['TE'],C:['C'],LT:['LT'],LG:['LG'],RG:['RG'],RT:['RT'],DE:['DE'],DT:['DT'],LB:['MLB','OLB'],CB:['CB1','CB2'],S:['SS','FS'],K:['K'],P:['P']};
+  const chart=DEPTH_CHART[dcPhase];
+  const players=ROSTER.filter(r=>r.role==='player'&&r.pos);
+  const changed=new Set();
+  players.forEach(p=>{
+    (posMap[p.pos]||[]).forEach(slot=>{
+      if(!chart[slot]) return;
+      const ei=chart[slot].findIndex(x=>!x);
+      if(ei>=0&&!Object.values(chart).some(s=>s.indexOf(p.id)>=0)){chart[slot][ei]=p.id;changed.add(slot);}
+    });
+  });
+  await Promise.all([...changed].map(pos=>saveDCToSupabase(dcPhase,pos)));
+  showToast('Depth chart auto-filled','success');renderDepthChart();
+}
+
+// ── PARENT PORTAL ──
+function renderParent(){
+  const games=SCHEDULE_EVENTS.filter(e=>e.type==='game');
+  const players=ROSTER.filter(r=>r.role==='player');
+  const wins=GAME_STATS.filter(g=>g.result?.startsWith('W')).length;
+  const losses=GAME_STATS.filter(g=>g.result?.startsWith('L')).length;
+  let html='<div class="fade-in"><div class="page-header"><div><div class="page-title">Parent Portal</div>'+
+    '<div class="page-sub">Read-only &middot; Schedule, results, roster</div></div></div><div class="page-body">';
+  html+='<div class="grid-4" style="margin-bottom:24px;">'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--accent)">'+(currentTeam?.record||wins+'-'+losses)+'</div><div class="stat-lbl">Record</div></div>'+
+    '<div class="stat-card"><div class="stat-val">'+GAME_STATS.length+'</div><div class="stat-lbl">Games</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--green)">'+wins+'</div><div class="stat-lbl">Wins</div></div>'+
+    '<div class="stat-card"><div class="stat-val" style="color:var(--def)">'+losses+'</div><div class="stat-lbl">Losses</div></div></div>';
+  html+='<div class="grid-2" style="gap:20px;align-items:start;">';
+  html+='<div><div class="sec-header"><div class="sec-title">Game Schedule</div></div><div class="card" style="padding:0;overflow:hidden;">';
+  if(!games.length) html+='<div style="padding:20px;text-align:center;font-size:13px;color:var(--text3);">No games scheduled</div>';
+  games.forEach(g=>{
+    html+='<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">'+
+      '<div style="min-width:80px;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--text2);">'+g.date+'</div>'+
+      '<div style="flex:1;"><div style="font-weight:700;font-size:13px;">'+g.title+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+(g.time||'')+' &middot; '+(g.location||'')+'</div></div>'+
+      '<span class="badge" style="background:rgba(255,61,26,.12);color:var(--def);">GAME</span></div>';
+  });
+  html+='</div></div>';
+  html+='<div><div class="sec-header"><div class="sec-title">Results</div></div><div class="card" style="padding:0;overflow:hidden;margin-bottom:16px;">';
+  if(!GAME_STATS.length) html+='<div style="padding:20px;text-align:center;font-size:13px;color:var(--text3);">No results yet</div>';
+  GAME_STATS.forEach(g=>{
+    html+='<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);">'+
+      '<div style="flex:1;font-weight:700;font-size:13px;">'+g.game+'</div>'+
+      '<div style="font-weight:700;font-size:14px;color:'+(g.result?.startsWith('W')?'var(--green)':'var(--def)')+';">'+(g.result||'')+'</div></div>';
+  });
+  html+='</div>';
+  html+='<div class="sec-header"><div class="sec-title">Roster</div></div><div class="card" style="padding:0;overflow:hidden;">';
+  players.forEach(p=>{
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);">'+
+      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;color:var(--accent);width:28px;text-align:center;">'+(p.number||'—')+'</div>'+
+      '<div><div style="font-weight:600;font-size:13px;">'+p.name+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+(p.pos||'')+' &middot; '+(p.year||'')+'</div></div></div>';
+  });
+  html+='</div></div></div>';
+  html+='<div style="margin-top:20px;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--r);font-size:12px;color:var(--text2);">'+
+    '📌 <strong style="color:var(--text);">Parents:</strong> This view shows schedule, results, and roster only. Playbooks and coaching materials are private.</div>'+
+    '</div></div>';
+  document.getElementById('view').innerHTML=html;
+}
+
+// ── DESIGNER ──
+function renderDesigner(){
+  document.getElementById('view').innerHTML=
+    '<div class="fade-in"><div class="page-header"><div><div class="page-title">Play Designer</div></div></div>'+
+    '<div class="page-body"><div class="card" style="text-align:center;padding:40px;">'+
+    '<div style="font-size:40px;margin-bottom:12px;">✏</div>'+
+    '<div style="font-weight:700;font-size:16px;margin-bottom:8px;">Play Designer</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:20px;">Open the full canvas tool to design plays.</div>'+
+    '<a href="football-playtool.html" target="_blank" class="btn btn-primary">Open Play Designer →</a>'+
+    '</div></div></div>';
+}
+
+// ── SETTINGS ──
+function renderSettings(){
+  const u=currentProfile;
+  document.getElementById('view').innerHTML=
+    '<div class="fade-in"><div class="page-header"><div><div class="page-title">Settings</div></div></div>'+
+    '<div class="page-body"><div style="max-width:480px;">'+
+    '<div class="sec-header"><div class="sec-title">Profile</div></div>'+
+    '<div class="card" style="margin-bottom:20px;">'+
+    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">'+
+    '<div class="avatar '+(u.role==='coach'?'av-coach':u.role==='ad'?'av-ad':'av-player')+'" style="width:52px;height:52px;font-size:18px;">'+(u.initials||'?')+'</div>'+
+    '<div><div style="font-weight:700;font-size:16px;">'+u.name+'</div>'+
+    '<div style="font-size:12px;color:var(--text2);">'+(u.title||u.role)+'</div></div></div>'+
+    '<div class="form-group"><label class="form-label">Name</label><input id="settName" value="'+u.name+'"></div>'+
+    '<div class="form-group"><label class="form-label">Email</label><input value="'+(currentUser.email||'')+'" disabled style="opacity:.5;"></div>'+
+    (u.role==='player'?'<div class="form-row"><div class="form-group"><label class="form-label">Number</label><input id="settNum" value="'+(u.number||'')+'"></div>'+
+    '<div class="form-group"><label class="form-label">Position</label><input id="settPos" value="'+(u.pos||'')+'"></div></div>':'')+
+    '<button class="btn btn-primary" onclick="saveSettings()">Save Changes</button></div>'+
+    '<div class="sec-header"><div class="sec-title">Team</div></div>'+
+    '<div class="card" style="margin-bottom:20px;">'+
+    '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">'+(currentTeam?.name||'')+'</div>'+
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Season '+(currentTeam?.season||'')+' &middot; ID: <span style="font-family:\'DM Mono\',monospace;font-size:11px;">'+(currentTeam?.id?.slice(0,8)+'...'||'')+'</span></div>'+
+    (isCoach()?'<button class="btn btn-ghost btn-sm" onclick="showTeamId()">Copy Full Team ID</button>':'')+
+    '</div>'+
+    '<div class="sec-header"><div class="sec-title">Account</div></div>'+
+    '<div class="card"><button class="btn btn-danger" onclick="logout()" style="width:100%;justify-content:center;">Sign Out</button></div>'+
+    '</div></div></div>';
+}
+async function saveSettings(){
+  const updates={name:document.getElementById('settName').value.trim()};
+  const num=document.getElementById('settNum');
+  const pos=document.getElementById('settPos');
+  if(num) updates.number=num.value.trim();
+  if(pos) updates.pos=pos.value.trim();
+  const initials=(updates.name||'').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  updates.initials=initials;
+  const {error}=await sb.from('profiles').update(updates).eq('id',currentUser.id);
+  if(error){showToast('Error: '+error.message,'warn');return;}
+  Object.assign(currentProfile,updates);
+  document.getElementById('navAvatar').textContent=initials;
+  showToast('Profile saved','success');
+}
+
+// ── INIT ──
+document.getElementById('modalBg').addEventListener('click',function(e){if(e.target===this)closeModal();});
+// Check for existing session on load
+sb.auth.getSession().then(({data:{session}})=>{
+  if(!session){hideLoading();}
+});
+</script>
+</body>
+</html>
